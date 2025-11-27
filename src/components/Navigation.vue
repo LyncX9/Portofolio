@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import logo from '@/assets/logo.png'
 
 const router = useRouter()
 const mobileMenuOpen = ref(false)
@@ -23,7 +24,7 @@ const navigateTo = (path: string) => {
   <nav class="navbar">
     <div class="navbar-container">
       <div class="logo">
-        <span class="logo-icon">Σ</span>
+        <img :src="logo" alt="Logo" class="logo-img" />
         <span class="logo-text">Bagas Firmansyah</span>
       </div>
 
@@ -55,6 +56,16 @@ const navigateTo = (path: string) => {
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--color-border);
   padding: 1rem 2rem;
+}
+
+.logo, .logo-img {
+  background: transparent !important;
+}
+
+.logo-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
 }
 
 .navbar-container {

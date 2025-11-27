@@ -4,7 +4,6 @@ const experiences = [
     id: 1,
     title: 'Network Technician (Fiber Optic)',
     company: 'PT Putra Jaya Raharja',
-    description: 'Perform installation and termination of fiber optic cables for customer internet networks.',
     duration: '2022 - 2023'
   },
 ]
@@ -24,8 +23,12 @@ const experiences = [
           </div>
           <h3>{{ exp.title }}</h3>
           <p class="company">{{ exp.company }}</p>
-          <p class="description">{{ exp.description }}</p>
-          <a href="#" class="view-more">Learn more →</a>
+          <ul class="description-list">
+            <li class="description">Installing and terminating fiber optic cables for customer network needs.</li>
+            <li class="description">Handling internet outage troubleshooting in the field, including connection checks, loss measurements, and connector repairs.</li>
+            <li class="description">Coordinating with the backend team to ensure tickets are resolved quickly and accurately.</li>
+            <li class="description">Performing routine network maintenance to maintain connection quality and minimize downtime.</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -37,6 +40,12 @@ const experiences = [
   padding: 6rem 2rem;
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(168, 85, 247, 0.03) 100%);
   position: relative;
+}
+
+.description-list {
+  list-style-type: disc;
+  padding-left: 0.8rem;
+  margin: 0;
 }
 
 .experience::before {

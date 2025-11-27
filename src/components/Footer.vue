@@ -20,8 +20,8 @@ onUnmounted(() => {
 <template>
   <footer class="footer">
     <div class="footer-content">
-      <p>&copy; {{ year }} Reville. All rights reserved.</p>
-      <p class="footer-text">Built by Reville </p>
+      <p>&copy; {{ year }} Bagas Firmansyah. All rights reserved.</p>
+      <p class="footer-text">Built by Bagas Firmansyah </p>
     </div>
   </footer>
 </template>

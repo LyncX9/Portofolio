@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ava from '@/assets/ava.png'
 </script>
 
 <template>
@@ -7,14 +8,10 @@
       <h2 class="section-title">About</h2>
       <div class="about-content">
         <div class="about-image">
-          <div class="image-placeholder">
-            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="100" cy="80" r="30" fill="#a855f7"/>
-              <path d="M 70 120 Q 70 150 100 160 Q 130 150 130 120" fill="#6366f1"/>
-              <rect x="60" y="160" width="80" height="30" rx="5" fill="#ec4899"/>
-            </svg>
-          </div>
+        <div class="ava">
+        <img :src="ava" alt="ava" class="ava-img" />
         </div>
+      </div>
         <div class="about-text">
           <p>
             I’m a frontend development student who enjoys turning ideas into simple, usable web interfaces. I’m currently studying at Nusaputra University while actively building personal projects to strengthen my skills in HTML, CSS, JavaScript, and Vue.js.
@@ -42,6 +39,16 @@
   padding: 6rem 2rem;
   background-color: var(--color-background);
   position: relative;
+}
+
+.ava .ava-img {
+  background: transparent;
+}
+
+.ava-img {
+  width: 350px;
+  height: 350px;
+  object-fit: contain;
 }
 
 .about-container {

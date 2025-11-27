@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import ava from '@/assets/ava.png'
 </script>
-
 <template>
   <section id="hero" class="hero">
     <div class="hero-container">
@@ -9,7 +9,7 @@
           <span>Hello! I am</span>
           <span class="gradient-text">Bagas Firmansyah</span>
         </div>
-        <h1 class="hero-title">Aspiring Frontend Developer</h1>
+        <h1 class="hero-title">Aspiring Web Developer</h1>
         <p class="hero-description">
           Currently learning and building frontend projects while studying at
           <a href="#" class="highlight">Nusaputra University</a>
@@ -18,19 +18,8 @@
           I’m a web development enthusiast who enjoys turning ideas into simple, usable interfaces. I’m currently expanding my skills in frontend technologies and eager to gain real industry experience.
         </p>
       </div>
-      <div class="hero-visual">
-        <div class="avatar-container">
-          <div class="avatar">
-            <div class="avatar-inner">
-              <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="50" cy="35" r="15" fill="#a855f7"/>
-                <path d="M 35 50 Q 35 65 50 70 Q 65 65 65 50" fill="#6366f1"/>
-                <circle cx="40" cy="55" r="3" fill="#ffffff"/>
-                <circle cx="60" cy="55" r="3" fill="#ffffff"/>
-              </svg>
-            </div>
-          </div>
-        </div>
+      <div class="ava">
+        <img :src="ava" alt="ava" class="ava-img" />
       </div>
     </div>
   </section>
@@ -47,6 +36,17 @@
   position: relative;
   overflow: hidden;
 }
+
+.ava .ava-img {
+  background: transparent;
+}
+
+.ava-img {
+  width: 350px;
+  height: 350px;
+  object-fit: contain;
+}
+
 
 .hero::before {
   content: '';

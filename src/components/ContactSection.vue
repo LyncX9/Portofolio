@@ -11,7 +11,7 @@ const socialLinks = [
     <div class="contact-container">
       <h2 class="section-title">Contact</h2>
       <p class="contact-subtitle">
-        I'm currently looking to join a <span class="highlight">cross-functional</span> team that values improving people's lives through accessible design. In a project it isn't just the output. It's the
+        I’m available for roles where I can contribute as a Web Developer, fullstack engineer, or mobile developer. If you believe I’d be a good fit for your team, feel free to contact me.
       </p>
 
       <div class="contact-email">

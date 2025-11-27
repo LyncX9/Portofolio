@@ -9,7 +9,7 @@ const techStack = [
 <template>
   <section id="skills" class="skills">
     <div class="skills-container">
-      <h2 class="section-title">I'm currently looking to join a <span class="gradient-text">cross-functional</span> team</h2>
+      <h2 class="section-title">I build clean, responsive, and modern <span class="gradient-text">web interfaces.</span></h2>
       <p class="skills-subtitle">That values improving people's lives through accessible design. In a project it isn't just the output. It's the.</p>
       
       <div class="tech-grid">
