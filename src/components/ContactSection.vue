@@ -1,25 +1,50 @@
 <script setup lang="ts">
-const socialLinks = [
-  { icon: '📧', label: 'Email', href: 'mailto:bagaskazama3818@gmail.com' },
-  { icon: '💼', label: 'LinkedIn', href: 'www.linkedin.com/in/bagas-firmansyah-a4a16a262' },
-  { icon: '🐙', label: 'GitHub', href: 'https://github.com/LyncX9' },
+import { computed } from 'vue'
+import type { ContactContent } from '@/types'
+
+const props = defineProps<{
+  contact?: ContactContent | null
+}>()
+
+// Fallback data used when the store hasn't loaded yet
+const fallbackEmail = 'bagaskazama3818@gmail.com'
+const fallbackSubtitle =
+  "I'm available for roles where I can contribute as a Web Developer, fullstack engineer, or mobile developer. If you believe I'd be a good fit for your team, feel free to contact me."
+const fallbackSocialLinks = [
+  { id: '1', icon: '📧', label: 'Email', href: 'mailto:bagaskazama3818@gmail.com' },
+  { id: '2', icon: '💼', label: 'LinkedIn', href: 'www.linkedin.com/in/bagas-firmansyah-a4a16a262' },
+  { id: '3', icon: '🐙', label: 'GitHub', href: 'https://github.com/LyncX9' },
 ]
+
+const displayEmail = computed(() => props.contact?.email ?? fallbackEmail)
+const displaySubtitle = computed(() => props.contact?.subtitle ?? fallbackSubtitle)
+const displaySocialLinks = computed(() =>
+  props.contact?.socialLinks && props.contact.socialLinks.length > 0
+    ? props.contact.socialLinks
+    : fallbackSocialLinks
+)
 </script>
 
 <template>
   <section id="contact" class="contact">
     <div class="contact-container">
       <h2 class="section-title">Contact</h2>
-      <p class="contact-subtitle">
-        I’m available for roles where I can contribute as a Web Developer, fullstack engineer, or mobile developer. If you believe I’d be a good fit for your team, feel free to contact me.
-      </p>
+      <p class="contact-subtitle">{{ displaySubtitle }}</p>
 
       <div class="contact-email">
-        <a href="mailto:bagaskazama3818@gmail.com" class="email-link">bagaskazama3818@gmail.com</a>
+        <a :href="`mailto:${displayEmail}`" class="email-link">{{ displayEmail }}</a>
       </div>
 
       <div class="social-links">
-        <a v-for="link in socialLinks" :key="link.label" :href="link.href" class="social-link" :title="link.label">
+        <a
+          v-for="link in displaySocialLinks"
+          :key="link.id"
+          :href="link.href"
+          class="social-link"
+          :title="link.label"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           {{ link.icon }}
         </a>
       </div>

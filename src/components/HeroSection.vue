@@ -1,25 +1,31 @@
 <script setup lang="ts">
+import type { HeroContent } from '@/types'
 import ava from '@/assets/ava.png'
+
+const props = defineProps<{
+  hero?: HeroContent | null
+}>()
 </script>
+
 <template>
   <section id="hero" class="hero">
     <div class="hero-container">
       <div class="hero-content">
         <div class="greeting">
-          <span>Hello! I am</span>
-          <span class="gradient-text">Bagas Firmansyah</span>
+          <span>{{ hero?.greeting ?? 'Hello! I Am' }}</span>
+          <span class="gradient-text">{{ hero?.name ?? 'Bagas Firmansyah' }}</span>
         </div>
-        <h1 class="hero-title">Aspiring Web Developer</h1>
+        <h1 class="hero-title">{{ hero?.title ?? 'Aspiring Web Developer' }}</h1>
         <p class="hero-description">
-          Currently learning and building frontend projects while studying at
-          <a href="#" class="highlight">Nusaputra University</a>
+          {{ hero?.description ?? 'Currently learning and building frontend projects while studying at' }}
+          <a :href="hero?.universityLink ?? '#'" class="highlight">Nusaputra University</a>
         </p>
         <p class="hero-bio">
-          I’m a web development enthusiast who enjoys turning ideas into simple, usable interfaces. I’m currently expanding my skills in frontend technologies and eager to gain real industry experience.
+          {{ hero?.bio ?? "I'm a web development enthusiast who enjoys turning ideas into simple, usable interfaces. I'm currently expanding my skills in frontend technologies and eager to gain real industry experience." }}
         </p>
       </div>
       <div class="ava">
-        <img :src="ava" alt="ava" class="ava-img" />
+        <img :src="hero?.profileImage ?? ava" alt="Profile" class="ava-img" />
       </div>
     </div>
   </section>

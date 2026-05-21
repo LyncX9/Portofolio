@@ -1,14 +1,27 @@
 <script setup lang="ts">
-const projects = [
+import { computed } from 'vue'
+import type { Project } from '@/types'
+
+const props = defineProps<{
+  projects?: Project[] | null
+}>()
+
+// Fallback data used when the store hasn't loaded yet
+const fallbackProjects: Project[] = [
   {
-    id: 1,
+    id: '1',
     title: 'PocketExpenseMonitor',
     category: 'Featured Project',
     description: 'A mobile app to track daily expenses and manage budgets effectively.',
     features: ['Responsive Design', 'Offline Support', 'Data Visualization'],
-    featured: true
+    image: '',
+    link: 'https://github.com/LyncX9/PocketExpenseMonitor.git',
+    featured: true,
+    order: 1,
   },
 ]
+
+const displayProjects = computed(() => (props.projects && props.projects.length > 0 ? props.projects : fallbackProjects))
 </script>
 
 <template>
@@ -16,9 +29,15 @@ const projects = [
     <div class="projects-container">
       <h2 class="section-title">Projects</h2>
       <div class="projects-grid">
-        <div v-for="(project, index) in projects" :key="project.id" class="project-card" :class="{ featured: project.featured }">
+        <div
+          v-for="project in displayProjects"
+          :key="project.id"
+          class="project-card"
+          :class="{ featured: project.featured }"
+        >
           <div class="project-image">
-            <div class="image-placeholder">
+            <img v-if="project.image" :src="project.image" :alt="project.title" class="project-img" />
+            <div v-else class="image-placeholder">
               <svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
                 <rect width="300" height="200" fill="url(#grad)"/>
                 <circle cx="100" cy="80" r="30" fill="#a855f7" opacity="0.5"/>
@@ -41,7 +60,10 @@ const projects = [
                 {{ feature }}
               </span>
             </div>
-            <a href="https://github.com/LyncX9/PocketExpenseMonitor.git" class="project-link">View project →</a>
+            <div class="project-links">
+              <a v-if="project.link" :href="project.link" target="_blank" rel="noopener noreferrer" class="project-link">View project →</a>
+              <a v-if="project.githubLink" :href="project.githubLink" target="_blank" rel="noopener noreferrer" class="project-link github-link">GitHub →</a>
+            </div>
           </div>
         </div>
       </div>
@@ -103,6 +125,12 @@ const projects = [
   overflow: hidden;
 }
 
+.project-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .image-placeholder {
   width: 100%;
   height: 100%;
@@ -161,6 +189,12 @@ const projects = [
   font-weight: 500;
 }
 
+.project-links {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .project-link {
   align-self: flex-start;
   color: var(--color-primary);
@@ -171,6 +205,14 @@ const projects = [
 .project-link:hover {
   color: var(--color-accent);
   transform: translateX(5px);
+}
+
+.github-link {
+  color: var(--color-text-secondary);
+}
+
+.github-link:hover {
+  color: var(--color-text);
 }
 
 @media (max-width: 768px) {

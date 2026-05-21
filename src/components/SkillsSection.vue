@@ -1,19 +1,37 @@
 <script setup lang="ts">
-const techStack = [
-  { icon: '⚡', name: 'HTML', category: 'Frontend' },
-  { icon: '🟢', name: 'CSS', category: 'Backend' },
-  { icon: '🔷', name: 'Java Script', category: 'Language' },
-  { icon: '💙', name: 'Vue.js', category: 'Frontend' },
+import { computed } from 'vue'
+import type { Skill } from '@/types'
+
+const props = defineProps<{
+  skills?: Skill[] | null
+}>()
+
+// Fallback data used when the store hasn't loaded yet
+const fallbackSkills: Skill[] = [
+  { id: '1', icon: '⚡', name: 'HTML', category: 'Frontend', order: 1 },
+  { id: '2', icon: '🟢', name: 'CSS', category: 'Frontend', order: 2 },
+  { id: '3', icon: '🔷', name: 'Java Script', category: 'Language', order: 3 },
+  { id: '4', icon: '💙', name: 'Vue.js', category: 'Frontend', order: 4 },
 ]
+
+const displaySkills = computed(() =>
+  props.skills && props.skills.length > 0 ? props.skills : fallbackSkills
+)
 </script>
+
 <template>
   <section id="skills" class="skills">
     <div class="skills-container">
-      <h2 class="section-title">I build clean, responsive, and modern <span class="gradient-text">web interfaces.</span></h2>
-      <p class="skills-subtitle">That values improving people's lives through accessible design. In a project it isn't just the output. It's the.</p>
-      
+      <h2 class="section-title">
+        I build clean, responsive, and modern <span class="gradient-text">web interfaces.</span>
+      </h2>
+      <p class="skills-subtitle">
+        That values improving people's lives through accessible design. In a project it isn't just
+        the output. It's the.
+      </p>
+
       <div class="tech-grid">
-        <div v-for="tech in techStack" :key="tech.name" class="tech-item">
+        <div v-for="tech in displaySkills" :key="tech.id" class="tech-item">
           <div class="tech-icon">{{ tech.icon }}</div>
           <span class="tech-name">{{ tech.name }}</span>
         </div>

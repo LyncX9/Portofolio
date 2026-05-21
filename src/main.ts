@@ -8,7 +8,14 @@ import router from './router'
 
 const app = createApp(App)
 
-app.use(createPinia())
+const pinia = createPinia()
+app.use(pinia)
 app.use(router)
 
-app.mount('#app')
+// Initialize auth session on app startup so the router guard has
+// up-to-date authentication state before the first navigation.
+import { useAuthStore } from '@/stores/authStore'
+const authStore = useAuthStore()
+authStore.initializeSession().finally(() => {
+  app.mount('#app')
+})

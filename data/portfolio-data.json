@@ -1,0 +1,77 @@
+{
+  "hero": {
+    "greeting": "Hello",
+    "name": "Concurrent 4",
+    "title": "Software Developer",
+    "description": "Building amazing things",
+    "bio": "Passionate developer",
+    "profileImage": "/images/profile.jpg",
+    "universityLink": "https://university.edu"
+  },
+  "about": {
+    "paragraphs": [
+      "First paragraph",
+      "Second paragraph"
+    ],
+    "skills": [
+      "JavaScript",
+      "TypeScript",
+      "Vue"
+    ],
+    "aboutImage": "/images/about.jpg"
+  },
+  "skills": [
+    {
+      "id": "1",
+      "name": "JavaScript",
+      "icon": "js-icon",
+      "category": "Frontend",
+      "order": 1
+    }
+  ],
+  "projects": [
+    {
+      "id": "1",
+      "title": "Project 1",
+      "category": "Web",
+      "description": "A great project",
+      "features": [
+        "Feature 1",
+        "Feature 2"
+      ],
+      "image": "/images/project1.jpg",
+      "link": "https://project1.com",
+      "featured": true,
+      "order": 1
+    }
+  ],
+  "experience": [
+    {
+      "id": "1",
+      "title": "Developer",
+      "company": "Tech Corp",
+      "duration": "2020-2023",
+      "descriptions": [
+        "Built features",
+        "Fixed bugs"
+      ],
+      "order": 1
+    }
+  ],
+  "contact": {
+    "email": "john@example.com",
+    "subtitle": "Get in touch",
+    "socialLinks": [
+      {
+        "id": "1",
+        "icon": "github",
+        "label": "GitHub",
+        "href": "https://github.com/johndoe"
+      }
+    ]
+  },
+  "metadata": {
+    "lastUpdated": "2026-05-21T02:16:05.566Z",
+    "version": "1.0.0"
+  }
+}

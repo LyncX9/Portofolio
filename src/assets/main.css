@@ -1,9 +1,327 @@
 @import './base.css';
 
+/* ============================================================
+   App Shell
+   ============================================================ */
+
 #app {
   width: 100%;
   min-height: 100vh;
   background-color: var(--color-background);
   padding: 0;
   margin: 0;
+}
+
+/* ============================================================
+   Admin Layout – Responsive
+   ============================================================ */
+
+/* Overlay backdrop for mobile sidebar */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: calc(var(--z-overlay) - 1);
+  cursor: pointer;
+}
+
+.sidebar-overlay.is-visible {
+  display: block;
+}
+
+/* Mobile: sidebar slides in as an overlay */
+@media (max-width: 600px) {
+  .admin-sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: var(--z-overlay);
+    transform: translateX(-100%);
+    transition: transform var(--transition-slow);
+    width: var(--sidebar-width) !important;
+    box-shadow: var(--shadow-xl);
+  }
+
+  .admin-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  /* Show labels even when "collapsed" on mobile overlay */
+  .admin-sidebar .sidebar-brand-text,
+  .admin-sidebar .sidebar-nav-label {
+    display: inline !important;
+  }
+
+  /* Hamburger button visible only on mobile */
+  .sidebar-hamburger {
+    display: flex !important;
+  }
+}
+
+/* Tablet: auto-collapse to icon-only sidebar */
+@media (min-width: 601px) and (max-width: 900px) {
+  .admin-sidebar {
+    width: var(--sidebar-width-collapsed) !important;
+  }
+
+  .admin-sidebar .sidebar-brand-text,
+  .admin-sidebar .sidebar-nav-label {
+    display: none !important;
+  }
+}
+
+/* Hamburger button – hidden on desktop */
+.sidebar-hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--transition-base),
+    color var(--transition-base);
+  flex-shrink: 0;
+}
+
+.sidebar-hamburger:hover {
+  background-color: rgba(168, 85, 247, 0.1);
+  color: var(--color-text);
+}
+
+.sidebar-hamburger:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   Admin Content Area
+   ============================================================ */
+
+.admin-content-section {
+  max-width: var(--content-max-width);
+}
+
+/* Responsive form grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .form-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .form-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ============================================================
+   Page Transitions
+   ============================================================ */
+
+/* Route-level fade transition (used in AdminDashboard router-view) */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--transition-base);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Slide-up transition for modals / panels */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition:
+    opacity var(--transition-slow),
+    transform var(--transition-slow);
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+/* Scale-in transition for dialogs */
+.scale-in-enter-active,
+.scale-in-leave-active {
+  transition:
+    opacity var(--transition-base),
+    transform var(--transition-base);
+}
+
+.scale-in-enter-from,
+.scale-in-leave-to {
+  opacity: 0;
+  transform: scale(0.94);
+}
+
+/* ============================================================
+   Skeleton Loader Compositions
+   ============================================================ */
+
+/* Editor skeleton – mimics a typical content editor card */
+.skeleton-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.skeleton-editor__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.skeleton-editor__title {
+  width: 160px;
+  height: 1.25rem;
+}
+
+.skeleton-editor__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.skeleton-editor__btn {
+  width: 80px;
+  height: 2.25rem;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.skeleton-editor__label {
+  width: 100px;
+  height: 0.875rem;
+}
+
+.skeleton-editor__input {
+  width: 100%;
+  height: 2.5rem;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-editor__textarea {
+  width: 100%;
+  height: 6rem;
+  border-radius: var(--radius-md);
+}
+
+/* List skeleton – mimics a CRUD list */
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.skeleton-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.skeleton-list-item__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.skeleton-list-item__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.skeleton-list-item__title {
+  width: 40%;
+  height: 1rem;
+}
+
+.skeleton-list-item__subtitle {
+  width: 60%;
+  height: 0.75rem;
+}
+
+.skeleton-list-item__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.skeleton-list-item__action-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-md);
+}
+
+/* ============================================================
+   Touch-Friendly Overrides (mobile)
+   ============================================================ */
+
+@media (max-width: 600px) {
+  /* Larger tap targets */
+  .btn {
+    min-height: 2.75rem;
+    padding: 0.625rem 1rem;
+  }
+
+  .btn-sm {
+    min-height: 2.25rem;
+  }
+
+  .btn-icon {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+
+  .form-input,
+  .form-textarea,
+  .form-select {
+    min-height: 2.75rem;
+    font-size: var(--font-size-base); /* prevent iOS zoom */
+  }
+
+  /* Stack form grids on mobile */
+  .form-grid-2,
+  .form-grid-3 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Full-width cards on mobile */
+  .card {
+    padding: var(--space-4);
+  }
 }

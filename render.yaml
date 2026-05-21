@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: portfolio
+    runtime: node
+    region: singapore  # closest to Indonesia
+    plan: free
+    buildCommand: npm install && npm run build-only
+    startCommand: NODE_ENV=production npx tsx server/index.ts
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        generateValue: false   # set manually in Render dashboard
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true    # Render auto-generates a secure random value
+      - key: CLIENT_URL
+        fromService:
+          type: web
+          name: portfolio
+          property: host

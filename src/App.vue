@@ -7,6 +7,7 @@ import ProjectsSection from './components/ProjectsSection.vue'
 import SkillsSection from './components/SkillsSection.vue'
 import ContactSection from './components/ContactSection.vue'
 import Footer from './components/Footer.vue'
+import NotificationContainer from './components/admin/NotificationContainer.vue'
 </script>
 
 <template>
@@ -20,6 +21,8 @@ import Footer from './components/Footer.vue'
     <ContactSection />
   </main>
   <Footer />
+  <!-- Global notification toasts — rendered via Teleport to body -->
+  <NotificationContainer />
 </template>
 
 <style scoped>

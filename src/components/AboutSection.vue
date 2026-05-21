@@ -1,5 +1,29 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import type { AboutContent } from '@/types'
 import ava from '@/assets/ava.png'
+
+const props = defineProps<{
+  about?: AboutContent | null
+}>()
+
+// Fallback data used when the store hasn't loaded yet
+const fallbackParagraphs = [
+  "I'm a frontend development student who enjoys turning ideas into simple, usable web interfaces. I'm currently studying at Nusaputra University while actively building personal projects to strengthen my skills in HTML, CSS, JavaScript, and Vue.js.",
+  'I started learning web development on my own, experimenting with small features and gradually understanding how real websites are built. That curiosity keeps me improving, especially in creating clean UI, responsive layouts, and functional interactions.',
+  "Right now, I'm focused on becoming a better frontend engineer by learning modern tools, writing cleaner code, and exploring best practices in web development. I'm excited to gain real industry experience through internships and collaborate with teams to build meaningful digital products.",
+]
+const fallbackSkills = ['HTML', 'CSS', 'Java Script', 'VUE.js']
+
+const displayParagraphs = computed(() =>
+  props.about?.paragraphs && props.about.paragraphs.length > 0
+    ? props.about.paragraphs
+    : fallbackParagraphs
+)
+const displaySkills = computed(() =>
+  props.about?.skills && props.about.skills.length > 0 ? props.about.skills : fallbackSkills
+)
+const displayImage = computed(() => props.about?.aboutImage ?? ava)
 </script>
 
 <template>
@@ -8,25 +32,16 @@ import ava from '@/assets/ava.png'
       <h2 class="section-title">About</h2>
       <div class="about-content">
         <div class="about-image">
-        <div class="ava">
-        <img :src="ava" alt="ava" class="ava-img" />
+          <div class="ava">
+            <img :src="displayImage" alt="About" class="ava-img" />
+          </div>
         </div>
-      </div>
         <div class="about-text">
-          <p>
-            I’m a frontend development student who enjoys turning ideas into simple, usable web interfaces. I’m currently studying at Nusaputra University while actively building personal projects to strengthen my skills in HTML, CSS, JavaScript, and Vue.js.
-          </p>
-          <p>
-            I started learning web development on my own, experimenting with small features and gradually understanding how real websites are built. That curiosity keeps me improving, especially in creating clean UI, responsive layouts, and functional interactions.
-          </p>
-          <p>
-            Right now, I’m focused on becoming a better frontend engineer by learning modern tools, writing cleaner code, and exploring best practices in web development. I’m excited to gain real industry experience through internships and collaborate with teams to build meaningful digital products.
+          <p v-for="(paragraph, idx) in displayParagraphs" :key="idx">
+            {{ paragraph }}
           </p>
           <div class="skills-list">
-            <div class="skill-item">HTML</div>
-            <div class="skill-item">CSS</div>
-            <div class="skill-item">Java Script</div>
-            <div class="skill-item">VUE.js</div>
+            <div v-for="skill in displaySkills" :key="skill" class="skill-item">{{ skill }}</div>
           </div>
         </div>
       </div>

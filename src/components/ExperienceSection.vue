@@ -1,12 +1,31 @@
 <script setup lang="ts">
-const experiences = [
+import { computed } from 'vue'
+import type { Experience } from '@/types'
+
+const props = defineProps<{
+  experience?: Experience[] | null
+}>()
+
+// Fallback data used when the store hasn't loaded yet
+const fallbackExperience: Experience[] = [
   {
-    id: 1,
+    id: '1',
     title: 'Network Technician (Fiber Optic)',
     company: 'PT Putra Jaya Raharja',
-    duration: '2022 - 2023'
+    duration: '2022 - 2023',
+    descriptions: [
+      'Installing and terminating fiber optic cables for customer network needs.',
+      'Handling internet outage troubleshooting in the field, including connection checks, loss measurements, and connector repairs.',
+      'Coordinating with the backend team to ensure tickets are resolved quickly and accurately.',
+      'Performing routine network maintenance to maintain connection quality and minimize downtime.',
+    ],
+    order: 1,
   },
 ]
+
+const displayExperience = computed(() =>
+  props.experience && props.experience.length > 0 ? props.experience : fallbackExperience
+)
 </script>
 
 <template>
@@ -14,7 +33,7 @@ const experiences = [
     <div class="experience-container">
       <h2 class="section-title">Work Experience</h2>
       <div class="experience-grid">
-        <div v-for="exp in experiences" :key="exp.id" class="experience-card">
+        <div v-for="exp in displayExperience" :key="exp.id" class="experience-card">
           <div class="card-icon">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -23,11 +42,11 @@ const experiences = [
           </div>
           <h3>{{ exp.title }}</h3>
           <p class="company">{{ exp.company }}</p>
+          <p class="duration">{{ exp.duration }}</p>
           <ul class="description-list">
-            <li class="description">Installing and terminating fiber optic cables for customer network needs.</li>
-            <li class="description">Handling internet outage troubleshooting in the field, including connection checks, loss measurements, and connector repairs.</li>
-            <li class="description">Coordinating with the backend team to ensure tickets are resolved quickly and accurately.</li>
-            <li class="description">Performing routine network maintenance to maintain connection quality and minimize downtime.</li>
+            <li v-for="(desc, idx) in exp.descriptions" :key="idx" class="description">
+              {{ desc }}
+            </li>
           </ul>
         </div>
       </div>
@@ -125,6 +144,12 @@ const experiences = [
   font-size: 0.9rem;
   color: var(--color-primary);
   font-weight: 600;
+  margin: 0;
+}
+
+.duration {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
