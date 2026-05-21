@@ -23,6 +23,7 @@
     "build:full": "npm run build-only && echo 'Frontend built successfully'"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.106.1",
     "@types/multer": "^2.1.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",

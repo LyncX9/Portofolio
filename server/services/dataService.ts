@@ -5,10 +5,13 @@ import { writeDataAtomic, readDataWithRetry, listBackups, restoreFromBackup } fr
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Paths configuration
+// Paths configuration (used as fallback when Supabase is not configured)
 const DATA_DIR = path.join(__dirname, '../../data')
 const DATA_FILE = path.join(DATA_DIR, 'portfolio-data.json')
 const BACKUP_DIR = path.join(DATA_DIR, 'backups')
+
+// Row ID used in Supabase — we always use a single row
+const PORTFOLIO_ROW_ID = 1
 
 /**
  * Portfolio data structure
@@ -72,32 +75,131 @@ export interface PortfolioData {
 }
 
 /**
- * Data service for portfolio content management
- * 
- * Provides safe read/write operations with automatic backups and atomic writes
+ * Determine whether Supabase is configured.
+ * Returns true only when both env vars are present.
+ */
+function isSupabaseConfigured(): boolean {
+  return !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY)
+}
+
+/**
+ * Lazily import the Supabase client so the app still starts without it.
+ */
+async function getSupabase() {
+  const { supabase } = await import('./supabaseClient.js')
+  return supabase
+}
+
+/**
+ * Data service for portfolio content management.
+ *
+ * Storage strategy:
+ * - When SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY are set → Supabase PostgreSQL
+ * - Otherwise → local JSON file (development / fallback)
+ *
+ * The Supabase table schema (run once in the Supabase SQL editor):
+ *
+ *   CREATE TABLE IF NOT EXISTS portfolio_data (
+ *     id   INTEGER PRIMARY KEY DEFAULT 1,
+ *     data JSONB   NOT NULL,
+ *     updated_at TIMESTAMPTZ DEFAULT NOW()
+ *   );
+ *
+ *   -- Ensure only one row ever exists
+ *   CREATE UNIQUE INDEX IF NOT EXISTS portfolio_data_single_row ON portfolio_data ((id = 1));
+ *
+ *   -- Seed with empty structure (the app will upsert on first save)
+ *   INSERT INTO portfolio_data (id, data) VALUES (1, '{}'::jsonb)
+ *   ON CONFLICT (id) DO NOTHING;
+ *
+ *   -- Disable Row Level Security for server-side access via service role key
+ *   ALTER TABLE portfolio_data DISABLE ROW LEVEL SECURITY;
  */
 export class DataService {
+  // ─── Supabase operations ────────────────────────────────────────────────────
+
+  private async loadFromSupabase(): Promise<PortfolioData> {
+    const supabase = await getSupabase()
+
+    const { data, error } = await supabase
+      .from('portfolio_data')
+      .select('data')
+      .eq('id', PORTFOLIO_ROW_ID)
+      .single()
+
+    if (error) {
+      // If the row doesn't exist yet, seed it from the local JSON file
+      if (error.code === 'PGRST116') {
+        console.log('No portfolio data in Supabase yet — seeding from local file...')
+        const localData = await this.loadFromFile()
+        await this.saveToSupabase(localData)
+        return localData
+      }
+      throw new Error(`Supabase read error: ${error.message}`)
+    }
+
+    const portfolioData = data.data as PortfolioData
+
+    if (!portfolioData?.metadata || !portfolioData?.hero || !portfolioData?.about) {
+      throw new Error('Invalid portfolio data structure in Supabase')
+    }
+
+    return portfolioData
+  }
+
+  private async saveToSupabase(portfolioData: PortfolioData): Promise<void> {
+    const supabase = await getSupabase()
+
+    const { error } = await supabase
+      .from('portfolio_data')
+      .upsert(
+        { id: PORTFOLIO_ROW_ID, data: portfolioData, updated_at: new Date().toISOString() },
+        { onConflict: 'id' }
+      )
+
+    if (error) {
+      throw new Error(`Supabase write error: ${error.message}`)
+    }
+  }
+
+  // ─── File operations (dev / fallback) ──────────────────────────────────────
+
+  private async loadFromFile(): Promise<PortfolioData> {
+    const rawData = await readDataWithRetry(DATA_FILE, { maxRetries: 3, initialDelay: 100 })
+    const data = JSON.parse(rawData) as PortfolioData
+
+    if (!data.metadata || !data.hero || !data.about) {
+      throw new Error('Invalid portfolio data structure')
+    }
+
+    return data
+  }
+
+  private async saveToFile(
+    data: PortfolioData,
+    createBackup: boolean
+  ): Promise<void> {
+    const jsonData = JSON.stringify(data, null, 2)
+    await writeDataAtomic(DATA_FILE, jsonData, {
+      createBackup,
+      backupDir: BACKUP_DIR,
+      maxRetries: 3,
+      initialDelay: 100,
+    })
+  }
+
+  // ─── Public API ─────────────────────────────────────────────────────────────
+
   /**
-   * Load portfolio data from disk
-   * 
-   * @returns Portfolio data object
-   * @throws Error if file cannot be read or parsed
+   * Load portfolio data.
+   * Uses Supabase when configured, otherwise reads from local JSON file.
    */
   async loadData(): Promise<PortfolioData> {
     try {
-      const rawData = await readDataWithRetry(DATA_FILE, {
-        maxRetries: 3,
-        initialDelay: 100,
-      })
-
-      const data = JSON.parse(rawData) as PortfolioData
-
-      // Validate basic structure
-      if (!data.metadata || !data.hero || !data.about) {
-        throw new Error('Invalid portfolio data structure')
+      if (isSupabaseConfigured()) {
+        return await this.loadFromSupabase()
       }
-
-      return data
+      return await this.loadFromFile()
     } catch (error) {
       throw new Error(
         `Failed to load portfolio data: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -106,23 +208,16 @@ export class DataService {
   }
 
   /**
-   * Save portfolio data to disk atomically
-   * 
-   * @param data - Portfolio data to save
-   * @param options - Save options
-   * @throws Error if validation fails or write operation fails
+   * Save portfolio data.
+   * Uses Supabase when configured, otherwise writes to local JSON file.
    */
   async saveData(
     data: PortfolioData,
-    options: {
-      createBackup?: boolean
-      updateMetadata?: boolean
-    } = {}
+    options: { createBackup?: boolean; updateMetadata?: boolean } = {}
   ): Promise<void> {
     const { createBackup = true, updateMetadata = true } = options
 
     try {
-      // Update metadata if requested
       if (updateMetadata) {
         data.metadata = {
           ...data.metadata,
@@ -130,19 +225,13 @@ export class DataService {
         }
       }
 
-      // Validate data structure before writing
       this.validateData(data)
 
-      // Convert to JSON with pretty printing
-      const jsonData = JSON.stringify(data, null, 2)
-
-      // Write atomically with backup
-      await writeDataAtomic(DATA_FILE, jsonData, {
-        createBackup,
-        backupDir: BACKUP_DIR,
-        maxRetries: 3,
-        initialDelay: 100,
-      })
+      if (isSupabaseConfigured()) {
+        await this.saveToSupabase(data)
+      } else {
+        await this.saveToFile(data, createBackup)
+      }
     } catch (error) {
       throw new Error(
         `Failed to save portfolio data: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -151,41 +240,35 @@ export class DataService {
   }
 
   /**
-   * Update a specific section of portfolio data
-   * 
-   * @param section - Section name to update
-   * @param sectionData - New data for the section
+   * Update a specific section of portfolio data.
    */
   async updateSection<K extends keyof Omit<PortfolioData, 'metadata'>>(
     section: K,
     sectionData: PortfolioData[K]
   ): Promise<void> {
-    // Load current data
     const data = await this.loadData()
-
-    // Update the section
     data[section] = sectionData
-
-    // Save with updated metadata
     await this.saveData(data, { createBackup: true, updateMetadata: true })
   }
 
   /**
-   * List all available backups
-   * 
-   * @returns Array of backup file paths (newest first)
+   * List available backups (file-based only; Supabase has built-in history).
    */
   async listBackups(): Promise<string[]> {
+    if (isSupabaseConfigured()) {
+      // Supabase doesn't use file backups — return empty array
+      return []
+    }
     return listBackups(DATA_FILE, BACKUP_DIR)
   }
 
   /**
-   * Restore data from a backup
-   * 
-   * @param backupPath - Path to the backup file
-   * @throws Error if backup doesn't exist or restore fails
+   * Restore from a file backup (file-based only).
    */
   async restoreFromBackup(backupPath: string): Promise<void> {
+    if (isSupabaseConfigured()) {
+      throw new Error('File-based restore is not available when using Supabase storage')
+    }
     try {
       await restoreFromBackup(backupPath, DATA_FILE)
     } catch (error) {
@@ -196,31 +279,18 @@ export class DataService {
   }
 
   /**
-   * Get the most recent backup
-   * 
-   * @returns Path to the most recent backup, or null if no backups exist
+   * Get the most recent backup path (file-based only).
    */
   async getLatestBackup(): Promise<string | null> {
     const backups = await this.listBackups()
-    return backups.length > 0 ? backups[0] : null
+    return backups.length > 0 ? (backups[0] ?? null) : null
   }
 
-  /**
-   * Validate portfolio data structure
-   * 
-   * @param data - Data to validate
-   * @throws Error if validation fails
-   */
+  // ─── Validation ─────────────────────────────────────────────────────────────
+
   private validateData(data: PortfolioData): void {
-    // Validate required top-level properties
     const requiredProps: (keyof PortfolioData)[] = [
-      'hero',
-      'about',
-      'skills',
-      'projects',
-      'experience',
-      'contact',
-      'metadata',
+      'hero', 'about', 'skills', 'projects', 'experience', 'contact', 'metadata',
     ]
 
     for (const prop of requiredProps) {
@@ -229,31 +299,14 @@ export class DataService {
       }
     }
 
-    // Validate hero section
     if (!data.hero.name || !data.hero.title) {
       throw new Error('Hero section must have name and title')
     }
-
-    // Validate arrays
-    if (!Array.isArray(data.skills)) {
-      throw new Error('Skills must be an array')
-    }
-    if (!Array.isArray(data.projects)) {
-      throw new Error('Projects must be an array')
-    }
-    if (!Array.isArray(data.experience)) {
-      throw new Error('Experience must be an array')
-    }
-
-    // Validate contact
-    if (!data.contact.email) {
-      throw new Error('Contact section must have an email')
-    }
-
-    // Validate metadata
-    if (!data.metadata.version) {
-      throw new Error('Metadata must have a version')
-    }
+    if (!Array.isArray(data.skills)) throw new Error('Skills must be an array')
+    if (!Array.isArray(data.projects)) throw new Error('Projects must be an array')
+    if (!Array.isArray(data.experience)) throw new Error('Experience must be an array')
+    if (!data.contact.email) throw new Error('Contact section must have an email')
+    if (!data.metadata.version) throw new Error('Metadata must have a version')
   }
 }
 

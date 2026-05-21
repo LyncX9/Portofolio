@@ -1,25 +1,49 @@
 # Deployment Guide
 
-Ada dua opsi deployment:
-
-- **Opsi A (Recommended):** Full-stack di **Render** — satu service, paling simpel
-- **Opsi B:** Frontend di **Vercel** + Backend di **Render** — lebih cepat untuk frontend
+Stack: **Supabase** (database) + **Render** (backend) + **Vercel** (frontend, opsional)
 
 ---
 
-## Opsi A: Full-Stack di Render (Recommended)
+## Step 1 — Setup Supabase (Database)
 
-### Langkah 1 — Push ke GitHub
+### 1.1 Buat Project Supabase
+
+1. Buka [supabase.com](https://supabase.com) → **New Project**
+2. Isi nama project, password database, pilih region **Southeast Asia (Singapore)**
+3. Tunggu project selesai dibuat (~1 menit)
+
+### 1.2 Buat Tabel
+
+1. Di sidebar kiri → **SQL Editor** → **New Query**
+2. Copy-paste isi file `supabase/schema.sql`
+3. Klik **Run** (atau Ctrl+Enter)
+
+Ini akan membuat tabel `portfolio_data` dengan data awal portfolio kamu.
+
+### 1.3 Ambil Credentials
+
+Di sidebar → **Project Settings** → **API**:
+
+| Yang dibutuhkan | Lokasi |
+|----------------|--------|
+| `SUPABASE_URL` | "Project URL" |
+| `SUPABASE_SERVICE_ROLE_KEY` | "service_role" (klik reveal) |
+
+Simpan kedua nilai ini — akan dipakai di Render.
+
+---
+
+## Step 2 — Deploy Backend ke Render
+
+### 2.1 Push ke GitHub (jika belum)
 
 ```bash
-git init                          # jika belum ada git repo
 git add .
-git commit -m "Initial commit"
-git remote add origin https://github.com/USERNAME/REPO.git
-git push -u origin main
+git commit -m "add supabase integration"
+git push origin main
 ```
 
-### Langkah 2 — Buat Web Service di Render
+### 2.2 Buat Web Service di Render
 
 1. Buka [render.com](https://render.com) → **New** → **Web Service**
 2. Connect GitHub repo kamu
@@ -27,17 +51,17 @@ git push -u origin main
 
 | Setting | Value |
 |---------|-------|
-| **Name** | `portfolio` |
-| **Region** | Singapore (terdekat dari Indonesia) |
+| **Name** | `portfolio-api` |
+| **Region** | Singapore |
 | **Branch** | `main` |
 | **Runtime** | Node |
 | **Build Command** | `npm install && npm run build-only` |
 | **Start Command** | `NODE_ENV=production npx tsx server/index.ts` |
 | **Plan** | Free |
 
-### Langkah 3 — Set Environment Variables di Render
+### 2.3 Set Environment Variables di Render
 
-Di tab **Environment**, tambahkan:
+Di tab **Environment**, tambahkan semua ini:
 
 | Key | Value |
 |-----|-------|
@@ -46,45 +70,36 @@ Di tab **Environment**, tambahkan:
 | `ADMIN_USERNAME` | `admin` |
 | `ADMIN_PASSWORD` | *(password kuat, min 12 karakter)* |
 | `SESSION_SECRET` | *(klik "Generate" untuk auto-generate)* |
-| `CLIENT_URL` | *(URL Render kamu, contoh: `https://portfolio.onrender.com`)* |
+| `CLIENT_URL` | `https://portfolio-api.onrender.com` *(atau URL Vercel jika pakai Vercel)* |
+| `SUPABASE_URL` | *(dari Step 1.3)* |
+| `SUPABASE_SERVICE_ROLE_KEY` | *(dari Step 1.3)* |
 
-### Langkah 4 — Deploy
+### 2.4 Deploy
 
-Klik **Create Web Service**. Render akan otomatis build dan deploy.
+Klik **Create Web Service**. Render akan build dan deploy otomatis (~3-5 menit).
 
-Setelah selesai, akses:
-- Portfolio: `https://portfolio.onrender.com`
-- Admin: `https://portfolio.onrender.com/admin/login`
+Setelah selesai, test:
+```
+https://portfolio-api.onrender.com/api/health
+```
+Harus return: `{"status":"ok","timestamp":"..."}`
 
 ---
 
-## Opsi B: Vercel (Frontend) + Render (Backend)
+## Step 3 — Deploy Frontend ke Vercel (Opsional)
 
-Gunakan ini jika ingin frontend lebih cepat dengan CDN global Vercel.
+Lewati step ini jika kamu mau pakai Render saja (frontend sudah di-serve oleh Express).
 
-### Step 1 — Deploy Backend ke Render
+### 3.1 Update .env.production
 
-Ikuti **Opsi A** di atas, tapi catat URL Render kamu (contoh: `https://portfolio-api.onrender.com`).
-
-Tambahkan env var tambahan di Render:
-| Key | Value |
-|-----|-------|
-| `CLIENT_URL` | `https://portfolio.vercel.app` *(URL Vercel kamu)* |
-
-### Step 2 — Update .env.production
-
-Edit file `.env.production` di root project:
-
+Edit file `.env.production`:
 ```dotenv
 VITE_API_BASE_URL=https://portfolio-api.onrender.com/api
 ```
 
-Ganti `portfolio-api.onrender.com` dengan URL Render kamu yang sebenarnya.
+### 3.2 Update vercel.json
 
-### Step 3 — Update vercel.json
-
-Edit `vercel.json`, ganti `YOUR-RENDER-APP` dengan nama service Render kamu:
-
+Edit `vercel.json`, ganti `YOUR-RENDER-APP` dengan URL Render kamu:
 ```json
 {
   "rewrites": [
@@ -97,57 +112,53 @@ Edit `vercel.json`, ganti `YOUR-RENDER-APP` dengan nama service Render kamu:
 }
 ```
 
-### Step 4 — Deploy Frontend ke Vercel
+### 3.3 Deploy ke Vercel
 
-1. Buka [vercel.com](https://vercel.com) → **New Project**
-2. Import GitHub repo yang sama
-3. Isi settings:
+1. Buka [vercel.com](https://vercel.com) → **New Project** → Import repo
+2. Settings:
 
 | Setting | Value |
 |---------|-------|
-| **Framework Preset** | Vite |
+| **Framework** | Vite |
 | **Build Command** | `npm run build-only` |
 | **Output Directory** | `dist` |
-| **Install Command** | `npm install` |
 
-4. Di **Environment Variables**, tambahkan:
+3. Environment Variables:
 
 | Key | Value |
 |-----|-------|
 | `VITE_API_BASE_URL` | `https://portfolio-api.onrender.com/api` |
 
-5. Klik **Deploy**
+4. Klik **Deploy**
+
+### 3.4 Update CLIENT_URL di Render
+
+Setelah Vercel deploy selesai, kamu dapat URL seperti `https://portfolio.vercel.app`.
+Update env var `CLIENT_URL` di Render ke URL Vercel tersebut, lalu **Manual Deploy** ulang.
 
 ---
 
-## Catatan Penting
+## Akses Setelah Deploy
 
-### Data Persistence di Render Free Plan
+| URL | Keterangan |
+|-----|-----------|
+| `https://portfolio-api.onrender.com` | Portfolio (jika pakai Render saja) |
+| `https://portfolio.vercel.app` | Portfolio (jika pakai Vercel) |
+| `https://portfolio-api.onrender.com/admin/login` | Admin dashboard |
 
-Render Free Plan menggunakan **ephemeral filesystem** — data di `data/` akan hilang saat service restart/redeploy.
-
-**Solusi:** Gunakan Render **Persistent Disk** (berbayar $0.25/GB/bulan) atau upgrade ke paid plan.
-
-Untuk menambahkan persistent disk:
-1. Di Render dashboard → service kamu → **Disks**
-2. Add disk: Mount Path = `/data`, Size = 1 GB
-3. Update `server/services/dataService.ts` — ubah `DATA_DIR` ke `/data`
-
-### CORS
-
-Pastikan `CLIENT_URL` di Render diset ke URL frontend kamu yang sebenarnya, bukan `localhost`.
-
-### Admin Password
-
-Gunakan password yang kuat. Setelah deploy pertama, credentials disimpan di `data/admin-credentials.json`. Jika ingin ganti password, hapus file tersebut dan restart service.
+**Login credentials:**
+- Username: `admin` (atau sesuai `ADMIN_USERNAME`)
+- Password: sesuai `ADMIN_PASSWORD` yang kamu set di Render
 
 ---
 
 ## Checklist Sebelum Deploy
 
-- [ ] Push semua perubahan ke GitHub
-- [ ] `.env` tidak ter-commit (ada di `.gitignore`)
-- [ ] `ADMIN_PASSWORD` sudah diset di Render (bukan default)
-- [ ] `SESSION_SECRET` sudah diset (random string panjang)
-- [ ] `CLIENT_URL` sudah diset ke URL production
-- [ ] Test login setelah deploy
+- [ ] Supabase project sudah dibuat
+- [ ] SQL schema sudah dijalankan di Supabase SQL Editor
+- [ ] `SUPABASE_URL` dan `SUPABASE_SERVICE_ROLE_KEY` sudah dicatat
+- [ ] Semua env vars sudah diset di Render
+- [ ] `ADMIN_PASSWORD` bukan default/lemah
+- [ ] Test `/api/health` setelah deploy
+- [ ] Test login ke admin dashboard
+- [ ] Test edit salah satu section dan refresh — data harus tetap ada
