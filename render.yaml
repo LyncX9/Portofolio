@@ -20,7 +20,7 @@ services:
       - key: SESSION_SECRET
         generateValue: true    # Render auto-generates a secure random value
       - key: CLIENT_URL
-        value: https://portfolio-api.onrender.com
+        value: https://portofolio-pearl-six.vercel.app
       - key: SUPABASE_URL
         value: https://mtushsmaczxcekdhkbpe.supabase.co
       - key: SUPABASE_SERVICE_ROLE_KEY
