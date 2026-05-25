@@ -22,7 +22,7 @@ services:
       - key: CLIENT_URL
         value: https://portfolio-api.onrender.com
       - key: SUPABASE_URL
-        value: https://fvftdvlmmjupdjwfyrao.supabase.co
+        value: https://mtushsmaczxcekdhkbpe.supabase.co
       - key: SUPABASE_SERVICE_ROLE_KEY
         generateValue: false
         sync: false

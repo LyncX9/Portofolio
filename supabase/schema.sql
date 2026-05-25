@@ -12,7 +12,9 @@ CREATE TABLE IF NOT EXISTS portfolio_data (
 CREATE UNIQUE INDEX IF NOT EXISTS portfolio_data_single_row
   ON portfolio_data ((id = 1));
 
-ALTER TABLE portfolio_data DISABLE ROW LEVEL SECURITY;
+ALTER TABLE portfolio_data ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.portfolio_data FROM anon;
+REVOKE ALL ON TABLE public.portfolio_data FROM authenticated;
 
 INSERT INTO portfolio_data (id, data, updated_at)
 VALUES (
