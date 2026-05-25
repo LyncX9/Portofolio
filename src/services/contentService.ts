@@ -4,6 +4,7 @@ import type {
   AboutContent,
   Skill,
   Project,
+  Certificate,
   Experience,
   ContactContent,
   ApiResponse
@@ -13,6 +14,7 @@ import {
   aboutSchema,
   skillSchema,
   projectSchema,
+  certificateSchema,
   experienceSchema,
   contactSchema,
   getValidationErrors
@@ -87,7 +89,7 @@ export async function updateHero(hero: HeroContent): Promise<ApiResponse<HeroCon
   if (validationError) return validationError
 
   try {
-    return await apiPut<HeroContent>(API_ENDPOINTS.CONTENT_HERO, { hero })
+    return await apiPut<HeroContent>(API_ENDPOINTS.CONTENT_HERO, hero)
   } catch (error) {
     return {
       success: false,
@@ -110,7 +112,7 @@ export async function updateAbout(about: AboutContent): Promise<ApiResponse<Abou
   if (validationError) return validationError
 
   try {
-    return await apiPut<AboutContent>(API_ENDPOINTS.CONTENT_ABOUT, { about })
+    return await apiPut<AboutContent>(API_ENDPOINTS.CONTENT_ABOUT, about)
   } catch (error) {
     return {
       success: false,
@@ -137,7 +139,7 @@ export async function createSkill(
   if (validationError) return validationError
 
   try {
-    return await apiPost<Skill>(API_ENDPOINTS.CONTENT_SKILLS, { skill })
+    return await apiPost<Skill>(API_ENDPOINTS.CONTENT_SKILLS, skill)
   } catch (error) {
     return {
       success: false,
@@ -160,7 +162,7 @@ export async function updateSkill(id: string, skill: Skill): Promise<ApiResponse
   if (validationError) return validationError
 
   try {
-    return await apiPut<Skill>(`${API_ENDPOINTS.CONTENT_SKILLS}/${id}`, { skill })
+    return await apiPut<Skill>(`${API_ENDPOINTS.CONTENT_SKILLS}/${id}`, skill)
   } catch (error) {
     return {
       success: false,
@@ -224,7 +226,7 @@ export async function createProject(
   if (validationError) return validationError
 
   try {
-    return await apiPost<Project>(API_ENDPOINTS.CONTENT_PROJECTS, { project })
+    return await apiPost<Project>(API_ENDPOINTS.CONTENT_PROJECTS, project)
   } catch (error) {
     return {
       success: false,
@@ -250,7 +252,7 @@ export async function updateProject(
   if (validationError) return validationError
 
   try {
-    return await apiPut<Project>(`${API_ENDPOINTS.CONTENT_PROJECTS}/${id}`, { project })
+    return await apiPut<Project>(`${API_ENDPOINTS.CONTENT_PROJECTS}/${id}`, project)
   } catch (error) {
     return {
       success: false,
@@ -283,6 +285,72 @@ export async function deleteProject(id: string): Promise<ApiResponse<{ message: 
 // ---------------------------------------------------------------------------
 
 /**
+ * Create a new certificate.
+ * Validates required fields, image path, and credential URL before persisting.
+ * POST /api/content/certificates
+ */
+export async function createCertificate(
+  certificate: Omit<Certificate, 'id' | 'order'>
+): Promise<ApiResponse<Certificate>> {
+  const partialSchema = certificateSchema.omit({ id: true, order: true })
+  const validationError = buildValidationError<Certificate>(partialSchema, certificate)
+  if (validationError) return validationError
+
+  try {
+    return await apiPost<Certificate>(API_ENDPOINTS.CONTENT_CERTIFICATES, certificate)
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create certificate'
+    }
+  }
+}
+
+/**
+ * Update an existing certificate.
+ * PUT /api/content/certificates/:id
+ */
+export async function updateCertificate(
+  id: string,
+  certificate: Certificate
+): Promise<ApiResponse<Certificate>> {
+  if (!id?.trim()) {
+    return { success: false, error: 'Certificate ID is required' }
+  }
+
+  const validationError = buildValidationError<Certificate>(certificateSchema, certificate)
+  if (validationError) return validationError
+
+  try {
+    return await apiPut<Certificate>(`${API_ENDPOINTS.CONTENT_CERTIFICATES}/${id}`, certificate)
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update certificate'
+    }
+  }
+}
+
+/**
+ * Delete a certificate by ID.
+ * DELETE /api/content/certificates/:id
+ */
+export async function deleteCertificate(id: string): Promise<ApiResponse<{ message: string }>> {
+  if (!id?.trim()) {
+    return { success: false, error: 'Certificate ID is required' }
+  }
+
+  try {
+    return await apiDelete(`${API_ENDPOINTS.CONTENT_CERTIFICATES}/${id}`)
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete certificate'
+    }
+  }
+}
+
+/**
  * Create a new experience entry.
  * Validates required fields before persisting.
  * POST /api/content/experience
@@ -295,7 +363,7 @@ export async function createExperience(
   if (validationError) return validationError
 
   try {
-    return await apiPost<Experience>(API_ENDPOINTS.CONTENT_EXPERIENCE, { experience })
+    return await apiPost<Experience>(API_ENDPOINTS.CONTENT_EXPERIENCE, experience)
   } catch (error) {
     return {
       success: false,
@@ -321,7 +389,7 @@ export async function updateExperience(
   if (validationError) return validationError
 
   try {
-    return await apiPut<Experience>(`${API_ENDPOINTS.CONTENT_EXPERIENCE}/${id}`, { experience })
+    return await apiPut<Experience>(`${API_ENDPOINTS.CONTENT_EXPERIENCE}/${id}`, experience)
   } catch (error) {
     return {
       success: false,
@@ -386,7 +454,7 @@ export async function updateContact(
   if (validationError) return validationError
 
   try {
-    return await apiPut<ContactContent>(API_ENDPOINTS.CONTENT_CONTACT, { contact })
+    return await apiPut<ContactContent>(API_ENDPOINTS.CONTENT_CONTACT, contact)
   } catch (error) {
     return {
       success: false,
@@ -410,6 +478,9 @@ export const contentService = {
   createProject,
   updateProject,
   deleteProject,
+  createCertificate,
+  updateCertificate,
+  deleteCertificate,
   createExperience,
   updateExperience,
   deleteExperience,

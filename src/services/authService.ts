@@ -1,5 +1,5 @@
 import type { AuthCredentials, AuthSession, ApiResponse } from '@/types'
-import { apiPost, apiGet, API_ENDPOINTS } from '@/utils/api'
+import { apiPost, apiGet, API_ENDPOINTS, clearCsrfToken, saveCsrfToken } from '@/utils/api'
 
 /**
  * Authentication Service
@@ -12,6 +12,12 @@ export interface SessionData {
   isAuthenticated: boolean
   user: { username: string }
   expiresAt: number
+  csrfToken?: string
+}
+
+interface LoginResponseData extends AuthSession {
+  user?: { username: string }
+  csrfToken?: string
 }
 
 /**
@@ -33,7 +39,7 @@ export async function authenticate(
   }
 
   try {
-    const response = await apiPost<AuthSession>(API_ENDPOINTS.AUTH_LOGIN, credentials)
+    const response = await apiPost<LoginResponseData>(API_ENDPOINTS.AUTH_LOGIN, credentials)
 
     // Normalise the response so callers always get a consistent shape
     if (!response.success) {
@@ -43,9 +49,27 @@ export async function authenticate(
       }
     }
 
+    if (!response.data) {
+      return {
+        success: false,
+        error: 'Authentication failed. Please check your credentials.'
+      }
+    }
+
+    if (response.data.csrfToken) {
+      saveCsrfToken(response.data.csrfToken)
+    }
+
+    const normalizedSession: AuthSession = {
+      token: response.data.token,
+      expiresAt: response.data.expiresAt,
+      username: response.data.username ?? response.data.user?.username ?? credentials.username,
+      csrfToken: response.data.csrfToken
+    }
+
     return {
       success: true,
-      data: response.data,
+      data: normalizedSession,
       message: response.message || 'Login successful'
     }
   } catch (error) {
@@ -77,10 +101,15 @@ export async function validateSession(): Promise<ApiResponse<SessionData>> {
     // Treat an explicitly unauthenticated response as a failure so callers
     // can use the success flag as a simple auth check.
     if (response.data && !response.data.isAuthenticated) {
+      clearCsrfToken()
       return {
         success: false,
         error: 'Session is not authenticated'
       }
+    }
+
+    if (response.data?.csrfToken) {
+      saveCsrfToken(response.data.csrfToken)
     }
 
     return {
@@ -121,6 +150,8 @@ export async function logout(): Promise<ApiResponse<{ message: string }>> {
       success: false,
       error: error instanceof Error ? error.message : 'An unexpected error occurred during logout'
     }
+  } finally {
+    clearCsrfToken()
   }
 }
 

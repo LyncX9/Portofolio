@@ -185,6 +185,20 @@ describe('Credential Initialization', () => {
     const credentials2 = loadCredentials()
     expect(credentials2?.passwordHash).toBe(originalHash)
   })
+
+  it('should update existing credentials when environment values change', async () => {
+    process.env.ADMIN_USERNAME = 'admin'
+    process.env.ADMIN_PASSWORD = 'securePassword123'
+    await initializeCredentials()
+
+    process.env.ADMIN_USERNAME = 'newadmin'
+    process.env.ADMIN_PASSWORD = 'newSecurePassword123'
+    const updated = await initializeCredentials()
+
+    expect(updated).toBe(true)
+    expect(await validateCredentials('newadmin', 'newSecurePassword123')).toBe(true)
+    expect(await validateCredentials('admin', 'securePassword123')).toBe(false)
+  })
 })
 
 describe('Credential Validation', () => {

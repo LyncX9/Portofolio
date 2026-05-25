@@ -2,18 +2,37 @@ import type { ApiResponse } from '@/types'
 
 // Base API configuration
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+const CSRF_STORAGE_KEY = 'portfolio_admin_csrf_token'
 
 /**
  * Read the CSRF token from the csrf_token cookie.
  * The server sets this cookie (non-HTTP-only) on login so the client can
  * include it in the X-CSRF-Token header for state-changing requests.
  */
-function getCsrfToken(): string | null {
+function getCookieCsrfToken(): string | null {
   if (typeof document === 'undefined') return null
   const match = document.cookie
     .split('; ')
     .find((row) => row.startsWith('csrf_token='))
   return match ? decodeURIComponent(match.split('=')[1] ?? '') : null
+}
+
+export function getCsrfToken(): string | null {
+  if (typeof window !== 'undefined') {
+    const storedToken = window.localStorage.getItem(CSRF_STORAGE_KEY)
+    if (storedToken) return storedToken
+  }
+  return getCookieCsrfToken()
+}
+
+export function saveCsrfToken(token?: string | null): void {
+  if (typeof window === 'undefined' || !token) return
+  window.localStorage.setItem(CSRF_STORAGE_KEY, token)
+}
+
+export function clearCsrfToken(): void {
+  if (typeof window === 'undefined') return
+  window.localStorage.removeItem(CSRF_STORAGE_KEY)
 }
 
 // API endpoints
@@ -29,6 +48,7 @@ export const API_ENDPOINTS = {
   CONTENT_ABOUT: `${API_BASE_URL}/content/about`,
   CONTENT_SKILLS: `${API_BASE_URL}/content/skills`,
   CONTENT_PROJECTS: `${API_BASE_URL}/content/projects`,
+  CONTENT_CERTIFICATES: `${API_BASE_URL}/content/certificates`,
   CONTENT_EXPERIENCE: `${API_BASE_URL}/content/experience`,
   CONTENT_CONTACT: `${API_BASE_URL}/content/contact`,
   
@@ -71,7 +91,8 @@ const DEFAULT_HEADERS = {
  */
 export async function apiRequest<T>(
   url: string,
-  config: RequestConfig = {}
+  config: RequestConfig = {},
+  hasRetried = false
 ): Promise<ApiResponse<T>> {
   const {
     method = HttpMethod.GET,
@@ -112,6 +133,22 @@ export async function apiRequest<T>(
 
     // Handle HTTP errors
     if (!response.ok) {
+      if (shouldRefreshCsrf(response.status, data, method, url) && !hasRetried) {
+        const refreshed = await refreshCsrfToken()
+        if (refreshed) {
+          return apiRequest<T>(url, config, true)
+        }
+      }
+
+      if (isAuthExpiredResponse(response.status, data)) {
+        handleAuthExpired()
+        return {
+          success: false,
+          error: 'Session expired. Please login again.',
+          message: data.message
+        }
+      }
+
       return {
         success: false,
         error: data.error || data.message || `HTTP ${response.status}: ${response.statusText}`,
@@ -129,6 +166,66 @@ export async function apiRequest<T>(
       success: false,
       error: error instanceof Error ? error.message : 'An unknown error occurred'
     }
+  }
+}
+
+function shouldRefreshCsrf(status: number, data: unknown, method: HttpMethod, url: string): boolean {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(method)) return false
+  if (url.includes('/auth/login') || url.includes('/auth/session')) return false
+  return isCsrfErrorResponse(status, data)
+}
+
+export function isCsrfErrorResponse(status: number, data: unknown): boolean {
+  if (status !== 403) return false
+
+  const error = getResponseError(data).toLowerCase()
+  return error.includes('csrf')
+}
+
+export function isAuthExpiredResponse(status: number, data: unknown): boolean {
+  if (status === 401) return true
+
+  const error = getResponseError(data).toLowerCase()
+  return error.includes('session expired') || error.includes('expired session')
+}
+
+function getResponseError(data: unknown): string {
+  if (!data || typeof data !== 'object') return ''
+  const payload = data as { error?: unknown; message?: unknown }
+  return String(payload.error ?? payload.message ?? '')
+}
+
+export async function refreshCsrfToken(): Promise<boolean> {
+  try {
+    const response = await fetch(API_ENDPOINTS.AUTH_SESSION, {
+      method: HttpMethod.GET,
+      headers: DEFAULT_HEADERS,
+      credentials: 'include'
+    })
+    const data = await response.json()
+    const session = data?.data
+
+    if (response.ok && session?.isAuthenticated && session?.csrfToken) {
+      saveCsrfToken(session.csrfToken)
+      return true
+    }
+
+    handleAuthExpired()
+    return false
+  } catch {
+    handleAuthExpired()
+    return false
+  }
+}
+
+export function handleAuthExpired(): void {
+  clearCsrfToken()
+  if (typeof window === 'undefined') return
+
+  window.dispatchEvent(new CustomEvent('admin-session-expired'))
+  const currentPath = window.location.pathname
+  if (currentPath.startsWith('/admin') && currentPath !== '/admin/login') {
+    window.location.assign('/admin/login')
   }
 }
 
@@ -167,7 +264,8 @@ export async function apiDelete<T>(url: string): Promise<ApiResponse<T>> {
 export async function apiUploadFile<T>(
   url: string,
   file: File,
-  additionalData?: Record<string, string>
+  additionalData?: Record<string, string>,
+  hasRetried = false
 ): Promise<ApiResponse<T>> {
   try {
     const formData = new FormData()
@@ -197,6 +295,22 @@ export async function apiUploadFile<T>(
     const data = await response.json()
 
     if (!response.ok) {
+      if (shouldRefreshCsrf(response.status, data, HttpMethod.POST, url) && !hasRetried) {
+        const refreshed = await refreshCsrfToken()
+        if (refreshed) {
+          return apiUploadFile<T>(url, file, additionalData, true)
+        }
+      }
+
+      if (isAuthExpiredResponse(response.status, data)) {
+        handleAuthExpired()
+        return {
+          success: false,
+          error: 'Session expired. Please login again.',
+          message: data.message
+        }
+      }
+
       return {
         success: false,
         error: data.error || data.message || `HTTP ${response.status}: ${response.statusText}`,

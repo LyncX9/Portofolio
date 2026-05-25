@@ -1,10 +1,24 @@
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
 import type { HeroContent } from '@/types'
 import ava from '@/assets/ava.png'
 
 const props = defineProps<{
   hero?: HeroContent | null
 }>()
+
+const imageFailed = ref(false)
+
+const profileImageSrc = computed(() =>
+  props.hero?.profileImage && !imageFailed.value ? props.hero.profileImage : ava
+)
+
+watch(
+  () => props.hero?.profileImage,
+  () => {
+    imageFailed.value = false
+  }
+)
 </script>
 
 <template>
@@ -18,14 +32,14 @@ const props = defineProps<{
         <h1 class="hero-title">{{ hero?.title ?? 'Aspiring Web Developer' }}</h1>
         <p class="hero-description">
           {{ hero?.description ?? 'Currently learning and building frontend projects while studying at' }}
-          <a :href="hero?.universityLink ?? '#'" class="highlight">Nusaputra University</a>
+          <span class="highlight">Nusaputra University</span>
         </p>
         <p class="hero-bio">
           {{ hero?.bio ?? "I'm a web development enthusiast who enjoys turning ideas into simple, usable interfaces. I'm currently expanding my skills in frontend technologies and eager to gain real industry experience." }}
         </p>
       </div>
       <div class="ava">
-        <img :src="hero?.profileImage ?? ava" alt="Profile" class="ava-img" />
+        <img :src="profileImageSrc" alt="Profile" class="ava-img" @error="imageFailed = true" />
       </div>
     </div>
   </section>
@@ -44,13 +58,27 @@ const props = defineProps<{
 }
 
 .ava .ava-img {
-  background: transparent;
+  background: rgba(15, 23, 42, 0.62);
 }
 
 .ava-img {
-  width: 350px;
-  height: 350px;
-  object-fit: contain;
+  width: min(360px, 78vw);
+  aspect-ratio: 1;
+  height: auto;
+  object-fit: cover;
+  border: 1px solid rgba(125, 211, 252, 0.3);
+  border-radius: 20px;
+  box-shadow:
+    0 26px 80px rgba(0, 0, 0, 0.35),
+    0 0 0 10px rgba(56, 189, 248, 0.04);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.ava-img:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 32px 110px rgba(14, 165, 233, 0.18),
+    0 0 0 10px rgba(16, 185, 129, 0.05);
 }
 
 
@@ -113,11 +141,6 @@ const props = defineProps<{
 .highlight {
   color: var(--color-primary);
   font-weight: 600;
-  transition: color 0.3s ease;
-}
-
-.highlight:hover {
-  color: var(--color-accent);
 }
 
 .hero-bio {

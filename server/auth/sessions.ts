@@ -165,7 +165,7 @@ export function extendSession(token: string): Session | null {
 
   // Update expiration and last activity
   const now = Date.now()
-  sessionData.expiresAt = now + SESSION_DURATION_MS
+  sessionData.expiresAt = Math.max(now + SESSION_DURATION_MS, sessionData.expiresAt + 1)
   sessionData.lastActivityAt = now
 
   // Save updated sessions

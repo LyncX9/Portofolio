@@ -32,12 +32,25 @@ export interface Project {
   id: string
   title: string
   category: string
+  categories?: string[]
   description: string
   features: string[]
   image: string
   link: string
   githubLink?: string
   featured: boolean
+  order: number
+}
+
+// Certificates Section
+export interface Certificate {
+  id: string
+  title: string
+  issuer: string
+  issuedAt: string
+  description: string
+  image: string
+  credentialUrl?: string
   order: number
 }
 
@@ -71,6 +84,7 @@ export interface PortfolioData {
   about: AboutContent
   skills: Skill[]
   projects: Project[]
+  certificates: Certificate[]
   experience: Experience[]
   contact: ContactContent
   metadata: {
@@ -89,6 +103,7 @@ export interface AuthSession {
   token: string
   expiresAt: number
   username: string
+  csrfToken?: string
 }
 
 export interface AuthState {
@@ -124,4 +139,3 @@ export interface ValidationErrors {
 
 // Re-export validation schemas and utilities
 export * from './schemas'
-

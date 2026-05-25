@@ -64,17 +64,11 @@ export function saveCredentials(credentials: AdminCredentials): void {
 
 /**
  * Initialize credentials from environment variables
- * Creates admin-credentials.json if it doesn't exist
- * @returns Promise resolving to true if credentials were initialized, false if they already exist
+ * Creates admin-credentials.json if it doesn't exist, or updates it when
+ * ADMIN_USERNAME / ADMIN_PASSWORD changed in .env.
+ * @returns Promise resolving to true if credentials were written, false if already current
  */
 export async function initializeCredentials(): Promise<boolean> {
-  // Check if credentials already exist
-  const existing = loadCredentials()
-  if (existing) {
-    return false
-  }
-
-  // Get credentials from environment variables
   const username = process.env.ADMIN_USERNAME || 'admin'
   const password = process.env.ADMIN_PASSWORD
 
@@ -84,18 +78,32 @@ export async function initializeCredentials(): Promise<boolean> {
     )
   }
 
-  // Hash the password
-  const passwordHash = await hashPassword(password)
+  const existing = loadCredentials()
+  if (existing) {
+    const usernameMatches = existing.username === username
+    const passwordMatches = await verifyPassword(password, existing.passwordHash)
 
-  // Create credentials object
+    if (usernameMatches && passwordMatches) {
+      return false
+    }
+
+    saveCredentials({
+      ...existing,
+      username,
+      passwordHash: await hashPassword(password),
+      updatedAt: new Date().toISOString()
+    })
+
+    return true
+  }
+
   const credentials: AdminCredentials = {
     username,
-    passwordHash,
+    passwordHash: await hashPassword(password),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }
 
-  // Save to file
   saveCredentials(credentials)
 
   return true

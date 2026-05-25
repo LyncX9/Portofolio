@@ -420,6 +420,29 @@ describe('Authentication API Endpoints', () => {
         invalidateSession(loginResponse.body.data.token)
       })
 
+      it('should accept logout when duplicate CSRF cookies include the valid token', async () => {
+        // First login to get a session
+        const loginResponse = await request(app)
+          .post('/api/auth/login')
+          .send({ username: 'testadmin', password: 'testpassword123' })
+
+        const sessionToken = loginResponse.body.data.token
+        const csrfToken = loginResponse.body.data.csrfToken
+
+        // Some browsers can keep a stale development cookie next to the fresh one.
+        const response = await request(app)
+          .post('/api/auth/logout')
+          .set('Cookie', [
+            `admin_session=${sessionToken}`,
+            'csrf_token=stale-csrf-token',
+            `csrf_token=${csrfToken}`
+          ])
+          .set('x-csrf-token', csrfToken)
+          .expect(200)
+
+        expect(response.body.success).toBe(true)
+      })
+
       it('should handle logout without active session', async () => {
         // CSRF validation happens before session check, so we get 403 for missing CSRF token
         const response = await request(app)

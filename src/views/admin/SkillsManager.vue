@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useContentStore } from '@/stores/content'
 import { useUiStore } from '@/stores/ui'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 import TextInput from '@/components/admin/forms/TextInput.vue'
+import ImageUpload from '@/components/admin/forms/ImageUpload.vue'
+import AdminSectionPreview from '@/components/admin/AdminSectionPreview.vue'
+import SkillsSection from '@/components/SkillsSection.vue'
+import { imageService } from '@/services/imageService'
 import type { Skill } from '@/types'
 
 // ─── Stores ───────────────────────────────────────────────────────────────────
@@ -28,6 +32,9 @@ const formData = ref<{ name: string; icon: string; category: string }>({
   icon: '',
   category: '',
 })
+
+const pendingIconFile = ref<File | null>(null)
+const pendingIconPreview = ref<string>('')
 
 /** Inline validation errors for the form */
 const validationErrors = ref<{ name?: string; icon?: string; category?: string }>({})
@@ -54,10 +61,51 @@ const hasValidationErrors = computed(() => Object.keys(validationErrors.value).l
 /** Save button is disabled while loading or when there are validation errors */
 const isSaveDisabled = computed(() => isLoading.value || hasValidationErrors.value)
 
+const previewSkills = computed<Skill[]>(() => {
+  const current = [...localSkills.value]
+  if (!isFormOpen.value) return current
+
+  const draft: Skill = {
+    id: editingSkill.value?.id ?? 'draft-skill',
+    name: formData.value.name || 'New Skill',
+    icon: pendingIconPreview.value || formData.value.icon || 'SK',
+    category: formData.value.category || 'Category',
+    order: editingSkill.value?.order ?? current.length,
+  }
+
+  if (editingSkill.value) {
+    const index = current.findIndex((skill) => skill.id === editingSkill.value?.id)
+    if (index >= 0) current[index] = draft
+    return current
+  }
+
+  return [...current, draft]
+})
+
+const currentIconImage = computed(() =>
+  isImageIcon(formData.value.icon) ? formData.value.icon : ''
+)
+
+watch(pendingIconFile, (file) => {
+  if (pendingIconPreview.value) {
+    URL.revokeObjectURL(pendingIconPreview.value)
+    pendingIconPreview.value = ''
+  }
+  if (file) {
+    pendingIconPreview.value = URL.createObjectURL(file)
+  }
+})
+
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
   await loadSkills()
+})
+
+onBeforeUnmount(() => {
+  if (pendingIconPreview.value) {
+    URL.revokeObjectURL(pendingIconPreview.value)
+  }
 })
 
 // ─── Load ─────────────────────────────────────────────────────────────────────
@@ -78,6 +126,7 @@ function syncLocalSkills(): void {
 
 function openCreateForm(): void {
   editingSkill.value = null
+  pendingIconFile.value = null
   formData.value = { name: '', icon: '', category: '' }
   validationErrors.value = {}
   isCreating.value = true
@@ -85,6 +134,7 @@ function openCreateForm(): void {
 
 function openEditForm(skill: Skill): void {
   isCreating.value = false
+  pendingIconFile.value = null
   formData.value = { name: skill.name, icon: skill.icon, category: skill.category }
   validationErrors.value = {}
   editingSkill.value = { ...skill }
@@ -93,6 +143,7 @@ function openEditForm(skill: Skill): void {
 function closeForm(): void {
   isCreating.value = false
   editingSkill.value = null
+  pendingIconFile.value = null
   formData.value = { name: '', icon: '', category: '' }
   validationErrors.value = {}
 }
@@ -105,7 +156,7 @@ function validateForm(): boolean {
   if (!formData.value.name.trim()) {
     errors.name = 'Name is required'
   }
-  if (!formData.value.icon.trim()) {
+  if (!formData.value.icon.trim() && !pendingIconFile.value) {
     errors.icon = 'Icon is required'
   }
   if (!formData.value.category.trim()) {
@@ -119,7 +170,7 @@ function validateForm(): boolean {
 /** Validate a single field on blur — Requirements: 11.4 */
 function validateSingleField(field: 'name' | 'icon' | 'category'): void {
   const value = formData.value[field]
-  if (!value.trim()) {
+  if (!value.trim() && !(field === 'icon' && pendingIconFile.value)) {
     validationErrors.value = {
       ...validationErrors.value,
       [field]: `${field.charAt(0).toUpperCase() + field.slice(1)} is required`,
@@ -131,15 +182,61 @@ function validateSingleField(field: 'name' | 'icon' | 'category'): void {
   }
 }
 
+function handleIconUpload(file: File): void {
+  pendingIconFile.value = file
+  const updated = { ...validationErrors.value }
+  delete updated.icon
+  validationErrors.value = updated
+}
+
+function handleIconRemove(): void {
+  pendingIconFile.value = null
+  formData.value.icon = ''
+}
+
+function isImageIcon(icon: string): boolean {
+  return /\.(png|jpe?g|gif|webp|svg)$/i.test(icon) || icon.startsWith('/uploads/')
+}
+
+function extractFilename(url: string): string {
+  if (!url) return ''
+  try {
+    const parsed = new URL(url)
+    return parsed.pathname.split('/').pop() ?? ''
+  } catch {
+    return url.split('/').pop() ?? ''
+  }
+}
+
+async function uploadPendingIcon(): Promise<string | null> {
+  if (!pendingIconFile.value) return formData.value.icon
+
+  const oldFilename = isImageIcon(formData.value.icon) ? extractFilename(formData.value.icon) : ''
+  const uploadResponse = oldFilename
+    ? await imageService.replaceImage(oldFilename, pendingIconFile.value, 'skills')
+    : await imageService.uploadImage(pendingIconFile.value, 'skills')
+
+  if (!uploadResponse.success || !uploadResponse.data) {
+    uiStore.showNotification('error', uploadResponse.error ?? 'Skill icon upload failed.')
+    return null
+  }
+
+  pendingIconFile.value = null
+  return uploadResponse.data.url
+}
+
 // ─── CRUD handlers ────────────────────────────────────────────────────────────
 
 /** Task 16.2 – createSkill handler */
 async function handleCreate(): Promise<void> {
   if (!validateForm()) return
 
+  const icon = await uploadPendingIcon()
+  if (icon === null) return
+
   const created = await contentStore.createSkill({
     name: formData.value.name.trim(),
-    icon: formData.value.icon.trim(),
+    icon: icon.trim(),
     category: formData.value.category.trim(),
   })
 
@@ -157,10 +254,13 @@ async function handleUpdate(): Promise<void> {
   if (!editingSkill.value) return
   if (!validateForm()) return
 
+  const icon = await uploadPendingIcon()
+  if (icon === null) return
+
   const updated: Skill = {
     ...editingSkill.value,
     name: formData.value.name.trim(),
-    icon: formData.value.icon.trim(),
+    icon: icon.trim(),
     category: formData.value.category.trim(),
   }
 
@@ -281,10 +381,26 @@ function handleDragEnd(): void {
       <span>Loading skills…</span>
     </div>
 
+    <div class="manager-workspace">
+      <div class="manager-fields">
     <!-- ── Create / Edit form ─────────────────────────────────────────────── -->
     <Transition name="slide-down">
       <section v-if="isFormOpen" class="skill-form-card" aria-label="Skill form">
         <h2 class="form-title">{{ isCreating ? 'Create New Skill' : 'Edit Skill' }}</h2>
+
+        <section class="icon-upload-section" aria-label="Skill icon image">
+          <div class="icon-upload-copy">
+            <h3>Icon Image</h3>
+            <p>Upload gambar icon skill, atau isi field icon dengan teks singkat kalau tidak pakai gambar.</p>
+          </div>
+          <ImageUpload
+            :current-image="currentIconImage"
+            :max-size="2"
+            @upload="handleIconUpload"
+            @remove="handleIconRemove"
+          />
+          <p v-if="validationErrors.icon" class="field-error">{{ validationErrors.icon }}</p>
+        </section>
 
         <div class="form-grid">
           <TextInput
@@ -298,9 +414,9 @@ function handleDragEnd(): void {
 
           <TextInput
             v-model="formData.icon"
-            label="Icon"
-            placeholder="e.g. devicon-typescript-plain or emoji 🟦"
-            required
+            label="Text Icon / Icon URL"
+            placeholder="e.g. JS, Vue, or /uploads/skills/icon.png"
+            :required="!pendingIconFile"
             :error="validationErrors.icon"
             @blur="validateSingleField('icon')"
           />
@@ -365,7 +481,15 @@ function handleDragEnd(): void {
           <span class="drag-handle" aria-hidden="true" title="Drag to reorder">⠿</span>
 
           <!-- Icon preview -->
-          <span class="skill-icon" :title="skill.icon">{{ skill.icon }}</span>
+          <span class="skill-icon" :title="skill.icon">
+            <img
+              v-if="isImageIcon(skill.icon)"
+              :src="skill.icon"
+              :alt="`${skill.name} icon`"
+              class="skill-icon-img"
+            />
+            <span v-else>{{ skill.icon }}</span>
+          </span>
 
           <!-- Info -->
           <div class="skill-info">
@@ -407,6 +531,15 @@ function handleDragEnd(): void {
     >
       <p class="empty-state__message">No skills yet. Click <strong>Create New Skill</strong> to add one.</p>
     </div>
+      </div>
+
+      <AdminSectionPreview
+        title="Skills section"
+        subtitle="Preview ikut berubah saat nama, icon, atau kategori skill diketik."
+      >
+        <SkillsSection :skills="previewSkills" />
+      </AdminSectionPreview>
+    </div>
 
     <!-- ── Delete confirmation dialog ────────────────────────────────────── -->
     <ConfirmDialog
@@ -427,7 +560,20 @@ function handleDragEnd(): void {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  max-width: 860px;
+  max-width: none;
+}
+
+.manager-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(min(560px, 100%), 1.1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.manager-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 /* ── Page header ─────────────────────────────────────────────────────────── */
@@ -577,6 +723,35 @@ function handleDragEnd(): void {
   gap: 1rem;
 }
 
+.icon-upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 10px;
+  background: rgba(2, 6, 23, 0.18);
+}
+
+.icon-upload-copy h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.icon-upload-copy p {
+  margin: 0.3rem 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.field-error {
+  margin: 0;
+  color: var(--color-accent, #ec4899);
+  font-size: 0.82rem;
+}
+
 .form-actions {
   display: flex;
   justify-content: flex-end;
@@ -648,10 +823,25 @@ function handleDragEnd(): void {
 
 /* Icon */
 .skill-icon {
-  font-size: 1.4rem;
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  font-size: 1rem;
+  font-weight: 700;
   flex-shrink: 0;
-  min-width: 2rem;
+  min-width: 2.2rem;
   text-align: center;
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(125, 211, 252, 0.18);
+}
+
+.skill-icon-img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
 }
 
 /* Info */
@@ -720,6 +910,12 @@ function handleDragEnd(): void {
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .manager-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 600px) {
   .page-header {
     flex-direction: column;

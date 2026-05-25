@@ -4,6 +4,8 @@ import { onBeforeRouteLeave } from 'vue-router'
 import TextArea from '@/components/admin/forms/TextArea.vue'
 import ArrayInput from '@/components/admin/forms/ArrayInput.vue'
 import ImageUpload from '@/components/admin/forms/ImageUpload.vue'
+import AdminSectionPreview from '@/components/admin/AdminSectionPreview.vue'
+import AboutSection from '@/components/AboutSection.vue'
 import { useContentStore } from '@/stores/content'
 import { useUiStore } from '@/stores/ui'
 import { uploadImage } from '@/services/imageService'
@@ -28,6 +30,7 @@ const savedSnapshot = ref<string>('')
 
 /** Pending image file selected by the user (not yet uploaded) */
 const pendingImageFile = ref<File | null>(null)
+const pendingImagePreview = ref<string>('')
 
 /** Validation errors keyed by field name */
 const validationErrors = ref<Record<string, string>>({})
@@ -48,6 +51,21 @@ const isValid = computed<boolean>(() => Object.keys(validationErrors.value).leng
 
 /** True when the save button should be enabled */
 const canSave = computed<boolean>(() => isDirty.value && isValid.value && !isSaving.value)
+
+const previewAbout = computed<AboutContent>(() => ({
+  ...formData.value,
+  aboutImage: pendingImagePreview.value || formData.value.aboutImage,
+}))
+
+watch(pendingImageFile, (file) => {
+  if (pendingImagePreview.value) {
+    URL.revokeObjectURL(pendingImagePreview.value)
+    pendingImagePreview.value = ''
+  }
+  if (file) {
+    pendingImagePreview.value = URL.createObjectURL(file)
+  }
+})
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
@@ -258,6 +276,11 @@ function handleBeforeUnload(event: BeforeUnloadEvent): void {
 
 onMounted(() => window.addEventListener('beforeunload', handleBeforeUnload))
 onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnload))
+onBeforeUnmount(() => {
+  if (pendingImagePreview.value) {
+    URL.revokeObjectURL(pendingImagePreview.value)
+  }
+})
 </script>
 
 <template>
@@ -306,6 +329,8 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
       novalidate
       @submit.prevent="handleSave"
     >
+      <div class="editor-workspace">
+        <div class="editor-fields">
       <!-- ── Biography Paragraphs ──────────────────────────────────────── -->
       <section class="form-section" aria-labelledby="paragraphs-heading">
         <div class="form-section__header">
@@ -429,6 +454,15 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
           {{ isSaving ? 'Saving…' : 'Save Changes' }}
         </button>
       </div>
+        </div>
+
+        <AdminSectionPreview
+          title="About section"
+          subtitle="Teks, skill, dan foto yang kamu ubah akan langsung muncul di sini."
+        >
+          <AboutSection :about="previewAbout" />
+        </AdminSectionPreview>
+      </div>
     </form>
   </div>
 </template>
@@ -439,7 +473,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  max-width: 800px;
+  max-width: none;
   padding: 1.5rem;
 }
 
@@ -504,6 +538,17 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
 
 /* ── Form ────────────────────────────────────────────────────────────────── */
 .editor-form {
+  display: block;
+}
+
+.editor-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(min(560px, 100%), 1.1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.editor-fields {
   display: flex;
   flex-direction: column;
   gap: 2rem;
@@ -701,6 +746,12 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnl
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .editor-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .about-editor {
     padding: 1rem;

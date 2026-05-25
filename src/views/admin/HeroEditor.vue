@@ -3,6 +3,8 @@ import { ref, reactive, computed, watch, inject, onMounted, onBeforeUnmount } fr
 import { onBeforeRouteLeave } from 'vue-router'
 import TextInput from '@/components/admin/forms/TextInput.vue'
 import ImageUpload from '@/components/admin/forms/ImageUpload.vue'
+import AdminSectionPreview from '@/components/admin/AdminSectionPreview.vue'
+import HeroSection from '@/components/HeroSection.vue'
 import { useContentStore } from '@/stores/content'
 import { useUiStore } from '@/stores/ui'
 import { imageService } from '@/services/imageService'
@@ -36,6 +38,7 @@ const savedSnapshot = ref<HeroContent | null>(null)
 
 /** Pending image file selected by the user (not yet uploaded) */
 const pendingImageFile = ref<File | null>(null)
+const pendingImagePreview = ref<string>('')
 
 /** Inline validation errors keyed by field name */
 const validationErrors = reactive<Record<string, string>>({})
@@ -60,10 +63,25 @@ const hasErrors = computed<boolean>(() => Object.keys(validationErrors).length >
 /** Save button is disabled while saving or when there are validation errors */
 const isSaveDisabled = computed<boolean>(() => isSaving.value || hasErrors.value)
 
+const previewHero = computed<HeroContent>(() => ({
+  ...form,
+  profileImage: pendingImagePreview.value || form.profileImage,
+}))
+
 // ─── Sync dirty state with AdminDashboard ─────────────────────────────────────
 
 watch(isDirty, (value) => {
   setUnsavedChanges?.(value)
+})
+
+watch(pendingImageFile, (file) => {
+  if (pendingImagePreview.value) {
+    URL.revokeObjectURL(pendingImagePreview.value)
+    pendingImagePreview.value = ''
+  }
+  if (file) {
+    pendingImagePreview.value = URL.createObjectURL(file)
+  }
 })
 
 // ─── Load ─────────────────────────────────────────────────────────────────────
@@ -104,10 +122,16 @@ function validateFields(): boolean {
   // Clear previous errors
   Object.keys(validationErrors).forEach((key) => delete validationErrors[key])
 
-  const result = heroSchema.safeParse({ ...form })
+  const result = heroSchema.safeParse({
+    ...form,
+    profileImage: pendingImageFile.value ? (form.profileImage || '/images/profile.jpg') : form.profileImage,
+  })
 
   if (!result.success) {
     const errors = getValidationErrors(result.error)
+    if (errors.profileImage) {
+      errors.profileImage = 'Upload a profile photo before saving.'
+    }
     Object.assign(validationErrors, errors)
     return false
   }
@@ -118,14 +142,17 @@ function validateFields(): boolean {
 /** Validate a single field on blur */
 function validateField(field: keyof HeroContent): void {
   // Re-run full schema but only surface the error for this field
-  const result = heroSchema.safeParse({ ...form })
+  const result = heroSchema.safeParse({
+    ...form,
+    profileImage: pendingImageFile.value ? (form.profileImage || '/images/profile.jpg') : form.profileImage,
+  })
 
   if (result.success) {
     delete validationErrors[field]
   } else {
     const errors = getValidationErrors(result.error)
     if (errors[field]) {
-      validationErrors[field] = errors[field]
+      validationErrors[field] = field === 'profileImage' ? 'Upload a profile photo before saving.' : errors[field]
     } else {
       delete validationErrors[field]
     }
@@ -234,6 +261,9 @@ onBeforeRouteLeave(() => {
 
 onBeforeUnmount(() => {
   setUnsavedChanges?.(false)
+  if (pendingImagePreview.value) {
+    URL.revokeObjectURL(pendingImagePreview.value)
+  }
 })
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -261,7 +291,7 @@ function extractFilename(url: string): string {
     <!-- Page header -->
     <div class="editor-header">
       <h1 class="editor-title">Hero Section</h1>
-      <p class="editor-subtitle">Edit your name, title, description, and profile image.</p>
+      <p class="editor-subtitle">Edit your name, title, description, and upload your profile photo.</p>
     </div>
 
     <!-- Loading state while fetching initial data -->
@@ -277,6 +307,8 @@ function extractFilename(url: string): string {
       novalidate
       @submit.prevent="handleSave"
     >
+      <div class="editor-workspace">
+        <div class="editor-fields">
       <!-- ── Profile image ──────────────────────────────────────────────── -->
       <section class="form-section">
         <h2 class="section-title">Profile Image</h2>
@@ -348,16 +380,6 @@ function extractFilename(url: string): string {
             />
           </div>
 
-          <!-- Profile Image URL -->
-          <TextInput
-            v-model="form.profileImage"
-            label="Profile Image URL"
-            placeholder="https://example.com/image.jpg"
-            :required="true"
-            :error="validationErrors['profileImage']"
-            @blur="validateField('profileImage')"
-          />
-
           <!-- University Link -->
           <TextInput
             v-model="form.universityLink"
@@ -396,6 +418,15 @@ function extractFilename(url: string): string {
       <p v-if="isDirty && !isSaving" class="dirty-indicator" role="status" aria-live="polite">
         You have unsaved changes.
       </p>
+        </div>
+
+        <AdminSectionPreview
+          title="Hero section"
+          subtitle="Preview ini ikut berubah saat kamu mengetik atau memilih foto baru."
+        >
+          <HeroSection :hero="previewHero" />
+        </AdminSectionPreview>
+      </div>
     </form>
   </div>
 </template>
@@ -403,7 +434,7 @@ function extractFilename(url: string): string {
 <style scoped>
 /* ── Layout ──────────────────────────────────────────────────────────────── */
 .hero-editor {
-  max-width: 800px;
+  max-width: none;
 }
 
 .editor-header {
@@ -446,6 +477,17 @@ function extractFilename(url: string): string {
 
 /* ── Form ────────────────────────────────────────────────────────────────── */
 .editor-form {
+  display: block;
+}
+
+.editor-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(min(560px, 100%), 1.1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.editor-fields {
   display: flex;
   flex-direction: column;
   gap: 2rem;
@@ -563,6 +605,12 @@ function extractFilename(url: string): string {
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .editor-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 600px) {
   .form-grid {
     grid-template-columns: 1fr;

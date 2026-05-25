@@ -7,7 +7,13 @@ import {
   invalidateSession,
   extendSession
 } from '../auth/sessions'
-import { setCsrfToken, validateCsrfToken, clearCsrfToken } from '../middleware/csrf'
+import {
+  generateCsrfToken,
+  setCsrfToken,
+  setCsrfTokenCookie,
+  validateCsrfToken,
+  clearCsrfToken
+} from '../middleware/csrf'
 
 const router = Router()
 
@@ -187,13 +193,16 @@ router.get('/session', (req: Request, res: Response) => {
       res.cookie(COOKIE_NAME, token, COOKIE_OPTIONS)
     }
 
+    const csrfToken = generateCsrfToken()
+    setCsrfTokenCookie(res, csrfToken)
+
     return res.json({
       success: true,
       data: {
         isAuthenticated: true,
         user: { username: session.username },
         expiresAt: extendedSession ? extendedSession.expiresAt : session.expiresAt,
-        csrfToken: req.cookies['csrf_token'] // Include CSRF token for authenticated sessions
+        csrfToken
       }
     })
   } catch (error) {

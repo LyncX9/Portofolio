@@ -8,12 +8,30 @@ import {
   aboutSchema,
   skillSchema,
   projectSchema,
+  certificateSchema,
   experienceSchema,
   contactSchema,
-  getValidationErrors
+  getValidationErrors,
 } from '../../src/types/schemas'
 
 const router = Router()
+
+function normalizeProjectCategories(body: { category?: unknown; categories?: unknown }): {
+  category: string
+  categories: string[]
+} {
+  const category = typeof body.category === 'string' ? body.category.trim() : ''
+  const categories = Array.isArray(body.categories)
+    ? body.categories.map((item) => (typeof item === 'string' ? item.trim() : '')).filter(Boolean)
+    : []
+
+  const normalized = categories.length > 0 ? categories : category ? [category] : []
+
+  return {
+    category: normalized[0] ?? '',
+    categories: normalized,
+  }
+}
 
 /**
  * GET /api/content
@@ -27,15 +45,15 @@ router.get('/', async (req: Request, res: Response) => {
     // Return complete portfolio data structure
     return res.json({
       success: true,
-      data
+      data,
     })
   } catch (error) {
     console.error('Content retrieval error:', error)
-    
+
     // Return appropriate error response
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to load portfolio content'
+      error: error instanceof Error ? error.message : 'Failed to load portfolio content',
     })
   }
 })
@@ -54,7 +72,7 @@ router.put('/hero', requireAuth, validateCsrfToken, async (req: Request, res: Re
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
-        errors: getValidationErrors(validation.error)
+        errors: getValidationErrors(validation.error),
       })
     }
 
@@ -65,13 +83,13 @@ router.put('/hero', requireAuth, validateCsrfToken, async (req: Request, res: Re
     return res.json({
       success: true,
       data: validation.data,
-      message: 'Hero section updated successfully'
+      message: 'Hero section updated successfully',
     })
   } catch (error) {
     console.error('Hero update error:', error)
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update hero section'
+      error: error instanceof Error ? error.message : 'Failed to update hero section',
     })
   }
 })
@@ -90,7 +108,7 @@ router.put('/about', requireAuth, validateCsrfToken, async (req: Request, res: R
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
-        errors: getValidationErrors(validation.error)
+        errors: getValidationErrors(validation.error),
       })
     }
 
@@ -101,13 +119,13 @@ router.put('/about', requireAuth, validateCsrfToken, async (req: Request, res: R
     return res.json({
       success: true,
       data: validation.data,
-      message: 'About section updated successfully'
+      message: 'About section updated successfully',
     })
   } catch (error) {
     console.error('About update error:', error)
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update about section'
+      error: error instanceof Error ? error.message : 'Failed to update about section',
     })
   }
 })
@@ -118,45 +136,50 @@ router.put('/about', requireAuth, validateCsrfToken, async (req: Request, res: R
  * Requires authentication
  * NOTE: This route must be defined before /skills/:id to avoid route conflicts
  */
-router.put('/skills/reorder', requireAuth, validateCsrfToken, async (req: Request, res: Response) => {
-  try {
-    const { skills } = req.body
+router.put(
+  '/skills/reorder',
+  requireAuth,
+  validateCsrfToken,
+  async (req: Request, res: Response) => {
+    try {
+      const { skills } = req.body
 
-    if (!Array.isArray(skills)) {
-      return res.status(400).json({
+      if (!Array.isArray(skills)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Skills must be an array',
+        })
+      }
+
+      // Validate all skills
+      const validations = skills.map((skill) => skillSchema.safeParse(skill))
+      const hasErrors = validations.some((v) => !v.success)
+
+      if (hasErrors) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation failed for one or more skills',
+        })
+      }
+
+      // Update skills section with new order
+      await dataService.updateSection('skills', skills)
+
+      // Return success
+      return res.json({
+        success: true,
+        data: skills,
+        message: 'Skills reordered successfully',
+      })
+    } catch (error) {
+      console.error('Skills reorder error:', error)
+      return res.status(500).json({
         success: false,
-        error: 'Skills must be an array'
+        error: error instanceof Error ? error.message : 'Failed to reorder skills',
       })
     }
-
-    // Validate all skills
-    const validations = skills.map(skill => skillSchema.safeParse(skill))
-    const hasErrors = validations.some(v => !v.success)
-
-    if (hasErrors) {
-      return res.status(400).json({
-        success: false,
-        error: 'Validation failed for one or more skills'
-      })
-    }
-
-    // Update skills section with new order
-    await dataService.updateSection('skills', skills)
-
-    // Return success
-    return res.json({
-      success: true,
-      data: skills,
-      message: 'Skills reordered successfully'
-    })
-  } catch (error) {
-    console.error('Skills reorder error:', error)
-    return res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to reorder skills'
-    })
-  }
-})
+  },
+)
 
 /**
  * POST /api/content/skills
@@ -174,7 +197,7 @@ router.post('/skills', requireAuth, validateCsrfToken, async (req: Request, res:
       name: req.body.name,
       icon: req.body.icon,
       category: req.body.category,
-      order: data.skills.length > 0 ? Math.max(...data.skills.map(s => s.order)) + 1 : 0
+      order: data.skills.length > 0 ? Math.max(...data.skills.map((s) => s.order)) + 1 : 0,
     }
 
     // Validate the new skill
@@ -184,7 +207,7 @@ router.post('/skills', requireAuth, validateCsrfToken, async (req: Request, res:
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
-        errors: getValidationErrors(validation.error)
+        errors: getValidationErrors(validation.error),
       })
     }
 
@@ -198,13 +221,13 @@ router.post('/skills', requireAuth, validateCsrfToken, async (req: Request, res:
     return res.status(201).json({
       success: true,
       data: validation.data,
-      message: 'Skill created successfully'
+      message: 'Skill created successfully',
     })
   } catch (error) {
     console.error('Skill creation error:', error)
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to create skill'
+      error: error instanceof Error ? error.message : 'Failed to create skill',
     })
   }
 })
@@ -222,12 +245,12 @@ router.put('/skills/:id', requireAuth, validateCsrfToken, async (req: Request, r
     const data = await dataService.loadData()
 
     // Find skill by ID
-    const skillIndex = data.skills.findIndex(s => s.id === id)
+    const skillIndex = data.skills.findIndex((s) => s.id === id)
 
     if (skillIndex === -1) {
       return res.status(404).json({
         success: false,
-        error: 'Skill not found'
+        error: 'Skill not found',
       })
     }
 
@@ -235,7 +258,7 @@ router.put('/skills/:id', requireAuth, validateCsrfToken, async (req: Request, r
     const updatedSkill = {
       ...req.body,
       id,
-      order: req.body.order !== undefined ? req.body.order : data.skills[skillIndex].order
+      order: req.body.order !== undefined ? req.body.order : data.skills[skillIndex].order,
     }
 
     // Validate the updated skill
@@ -245,7 +268,7 @@ router.put('/skills/:id', requireAuth, validateCsrfToken, async (req: Request, r
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
-        errors: getValidationErrors(validation.error)
+        errors: getValidationErrors(validation.error),
       })
     }
 
@@ -259,13 +282,13 @@ router.put('/skills/:id', requireAuth, validateCsrfToken, async (req: Request, r
     return res.json({
       success: true,
       data: validation.data,
-      message: 'Skill updated successfully'
+      message: 'Skill updated successfully',
     })
   } catch (error) {
     console.error('Skill update error:', error)
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update skill'
+      error: error instanceof Error ? error.message : 'Failed to update skill',
     })
   }
 })
@@ -275,42 +298,47 @@ router.put('/skills/:id', requireAuth, validateCsrfToken, async (req: Request, r
  * Delete a skill
  * Requires authentication
  */
-router.delete('/skills/:id', requireAuth, validateCsrfToken, async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params
+router.delete(
+  '/skills/:id',
+  requireAuth,
+  validateCsrfToken,
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params
 
-    // Load current data
-    const data = await dataService.loadData()
+      // Load current data
+      const data = await dataService.loadData()
 
-    // Find skill by ID
-    const skillIndex = data.skills.findIndex(s => s.id === id)
+      // Find skill by ID
+      const skillIndex = data.skills.findIndex((s) => s.id === id)
 
-    if (skillIndex === -1) {
-      return res.status(404).json({
+      if (skillIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          error: 'Skill not found',
+        })
+      }
+
+      // Remove skill from array
+      data.skills.splice(skillIndex, 1)
+
+      // Update skills section
+      await dataService.updateSection('skills', data.skills)
+
+      // Return success
+      return res.json({
+        success: true,
+        message: 'Skill deleted successfully',
+      })
+    } catch (error) {
+      console.error('Skill deletion error:', error)
+      return res.status(500).json({
         success: false,
-        error: 'Skill not found'
+        error: error instanceof Error ? error.message : 'Failed to delete skill',
       })
     }
-
-    // Remove skill from array
-    data.skills.splice(skillIndex, 1)
-
-    // Update skills section
-    await dataService.updateSection('skills', data.skills)
-
-    // Return success
-    return res.json({
-      success: true,
-      message: 'Skill deleted successfully'
-    })
-  } catch (error) {
-    console.error('Skill deletion error:', error)
-    return res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to delete skill'
-    })
-  }
-})
+  },
+)
 
 /**
  * PUT /api/content/experience/reorder
@@ -318,45 +346,50 @@ router.delete('/skills/:id', requireAuth, validateCsrfToken, async (req: Request
  * Requires authentication
  * NOTE: This route must be defined before /experience/:id to avoid route conflicts
  */
-router.put('/experience/reorder', requireAuth, validateCsrfToken, async (req: Request, res: Response) => {
-  try {
-    const { experience } = req.body
+router.put(
+  '/experience/reorder',
+  requireAuth,
+  validateCsrfToken,
+  async (req: Request, res: Response) => {
+    try {
+      const { experience } = req.body
 
-    if (!Array.isArray(experience)) {
-      return res.status(400).json({
+      if (!Array.isArray(experience)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Experience must be an array',
+        })
+      }
+
+      // Validate all experience entries
+      const validations = experience.map((exp) => experienceSchema.safeParse(exp))
+      const hasErrors = validations.some((v) => !v.success)
+
+      if (hasErrors) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation failed for one or more experience entries',
+        })
+      }
+
+      // Update experience section with new order
+      await dataService.updateSection('experience', experience)
+
+      // Return success
+      return res.json({
+        success: true,
+        data: experience,
+        message: 'Experience reordered successfully',
+      })
+    } catch (error) {
+      console.error('Experience reorder error:', error)
+      return res.status(500).json({
         success: false,
-        error: 'Experience must be an array'
+        error: error instanceof Error ? error.message : 'Failed to reorder experience',
       })
     }
-
-    // Validate all experience entries
-    const validations = experience.map(exp => experienceSchema.safeParse(exp))
-    const hasErrors = validations.some(v => !v.success)
-
-    if (hasErrors) {
-      return res.status(400).json({
-        success: false,
-        error: 'Validation failed for one or more experience entries'
-      })
-    }
-
-    // Update experience section with new order
-    await dataService.updateSection('experience', experience)
-
-    // Return success
-    return res.json({
-      success: true,
-      data: experience,
-      message: 'Experience reordered successfully'
-    })
-  } catch (error) {
-    console.error('Experience reorder error:', error)
-    return res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to reorder experience'
-    })
-  }
-})
+  },
+)
 
 /**
  * POST /api/content/projects
@@ -367,19 +400,21 @@ router.post('/projects', requireAuth, validateCsrfToken, async (req: Request, re
   try {
     // Load current data
     const data = await dataService.loadData()
+    const categoryData = normalizeProjectCategories(req.body)
 
     // Generate unique ID and calculate order
     const newProject = {
       id: uuidv4(),
       title: req.body.title,
-      category: req.body.category,
+      category: categoryData.category,
+      categories: categoryData.categories,
       description: req.body.description,
       features: req.body.features || [],
       image: req.body.image,
       link: req.body.link,
       githubLink: req.body.githubLink || '',
       featured: req.body.featured || false,
-      order: data.projects.length > 0 ? Math.max(...data.projects.map(p => p.order)) + 1 : 0
+      order: data.projects.length > 0 ? Math.max(...data.projects.map((p) => p.order)) + 1 : 0,
     }
 
     // Validate the new project
@@ -389,7 +424,7 @@ router.post('/projects', requireAuth, validateCsrfToken, async (req: Request, re
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
-        errors: getValidationErrors(validation.error)
+        errors: getValidationErrors(validation.error),
       })
     }
 
@@ -403,13 +438,13 @@ router.post('/projects', requireAuth, validateCsrfToken, async (req: Request, re
     return res.status(201).json({
       success: true,
       data: validation.data,
-      message: 'Project created successfully'
+      message: 'Project created successfully',
     })
   } catch (error) {
     console.error('Project creation error:', error)
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to create project'
+      error: error instanceof Error ? error.message : 'Failed to create project',
     })
   }
 })
@@ -431,7 +466,7 @@ router.post('/experience', requireAuth, validateCsrfToken, async (req: Request, 
       company: req.body.company,
       duration: req.body.duration,
       descriptions: req.body.descriptions || [],
-      order: data.experience.length > 0 ? Math.max(...data.experience.map(e => e.order)) + 1 : 0
+      order: data.experience.length > 0 ? Math.max(...data.experience.map((e) => e.order)) + 1 : 0,
     }
 
     // Validate the new experience
@@ -441,7 +476,7 @@ router.post('/experience', requireAuth, validateCsrfToken, async (req: Request, 
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
-        errors: getValidationErrors(validation.error)
+        errors: getValidationErrors(validation.error),
       })
     }
 
@@ -455,13 +490,13 @@ router.post('/experience', requireAuth, validateCsrfToken, async (req: Request, 
     return res.status(201).json({
       success: true,
       data: validation.data,
-      message: 'Experience created successfully'
+      message: 'Experience created successfully',
     })
   } catch (error) {
     console.error('Experience creation error:', error)
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to create experience'
+      error: error instanceof Error ? error.message : 'Failed to create experience',
     })
   }
 })
@@ -474,17 +509,18 @@ router.post('/experience', requireAuth, validateCsrfToken, async (req: Request, 
 router.put('/projects/:id', requireAuth, validateCsrfToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params
+    const categoryData = normalizeProjectCategories(req.body)
 
     // Load current data
     const data = await dataService.loadData()
 
     // Find project by ID
-    const projectIndex = data.projects.findIndex(p => p.id === id)
+    const projectIndex = data.projects.findIndex((p) => p.id === id)
 
     if (projectIndex === -1) {
       return res.status(404).json({
         success: false,
-        error: 'Project not found'
+        error: 'Project not found',
       })
     }
 
@@ -492,7 +528,9 @@ router.put('/projects/:id', requireAuth, validateCsrfToken, async (req: Request,
     const updatedProject = {
       ...req.body,
       id,
-      order: req.body.order !== undefined ? req.body.order : data.projects[projectIndex].order
+      category: categoryData.category,
+      categories: categoryData.categories,
+      order: req.body.order !== undefined ? req.body.order : data.projects[projectIndex].order,
     }
 
     // Validate the updated project
@@ -502,7 +540,7 @@ router.put('/projects/:id', requireAuth, validateCsrfToken, async (req: Request,
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
-        errors: getValidationErrors(validation.error)
+        errors: getValidationErrors(validation.error),
       })
     }
 
@@ -516,13 +554,13 @@ router.put('/projects/:id', requireAuth, validateCsrfToken, async (req: Request,
     return res.json({
       success: true,
       data: validation.data,
-      message: 'Project updated successfully'
+      message: 'Project updated successfully',
     })
   } catch (error) {
     console.error('Project update error:', error)
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update project'
+      error: error instanceof Error ? error.message : 'Failed to update project',
     })
   }
 })
@@ -532,145 +570,310 @@ router.put('/projects/:id', requireAuth, validateCsrfToken, async (req: Request,
  * Delete a project
  * Requires authentication
  */
-router.delete('/projects/:id', requireAuth, validateCsrfToken, async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params
+router.delete(
+  '/projects/:id',
+  requireAuth,
+  validateCsrfToken,
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params
 
-    // Load current data
-    const data = await dataService.loadData()
+      // Load current data
+      const data = await dataService.loadData()
 
-    // Find project by ID
-    const projectIndex = data.projects.findIndex(p => p.id === id)
+      // Find project by ID
+      const projectIndex = data.projects.findIndex((p) => p.id === id)
 
-    if (projectIndex === -1) {
-      return res.status(404).json({
+      if (projectIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          error: 'Project not found',
+        })
+      }
+
+      // Remove project from array
+      data.projects.splice(projectIndex, 1)
+
+      // Update projects section
+      await dataService.updateSection('projects', data.projects)
+
+      // Return success
+      return res.json({
+        success: true,
+        message: 'Project deleted successfully',
+      })
+    } catch (error) {
+      console.error('Project deletion error:', error)
+      return res.status(500).json({
         success: false,
-        error: 'Project not found'
+        error: error instanceof Error ? error.message : 'Failed to delete project',
       })
     }
+  },
+)
 
-    // Remove project from array
-    data.projects.splice(projectIndex, 1)
+/**
+ * POST /api/content/certificates
+ * Create a new certificate
+ * Requires authentication
+ */
+router.post(
+  '/certificates',
+  requireAuth,
+  validateCsrfToken,
+  async (req: Request, res: Response) => {
+    try {
+      const data = await dataService.loadData()
 
-    // Update projects section
-    await dataService.updateSection('projects', data.projects)
+      const newCertificate = {
+        id: uuidv4(),
+        title: req.body.title,
+        issuer: req.body.issuer,
+        issuedAt: req.body.issuedAt,
+        description: req.body.description,
+        image: req.body.image,
+        credentialUrl: req.body.credentialUrl || '',
+        order:
+          data.certificates.length > 0 ? Math.max(...data.certificates.map((c) => c.order)) + 1 : 0,
+      }
 
-    // Return success
-    return res.json({
-      success: true,
-      message: 'Project deleted successfully'
-    })
-  } catch (error) {
-    console.error('Project deletion error:', error)
-    return res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to delete project'
-    })
-  }
-})
+      const validation = certificateSchema.safeParse(newCertificate)
+
+      if (!validation.success) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation failed',
+          errors: getValidationErrors(validation.error),
+        })
+      }
+
+      data.certificates.push(validation.data)
+      await dataService.updateSection('certificates', data.certificates)
+
+      return res.status(201).json({
+        success: true,
+        data: validation.data,
+        message: 'Certificate created successfully',
+      })
+    } catch (error) {
+      console.error('Certificate creation error:', error)
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to create certificate',
+      })
+    }
+  },
+)
+
+/**
+ * PUT /api/content/certificates/:id
+ * Update an existing certificate
+ * Requires authentication
+ */
+router.put(
+  '/certificates/:id',
+  requireAuth,
+  validateCsrfToken,
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params
+      const data = await dataService.loadData()
+      const certificateIndex = data.certificates.findIndex((c) => c.id === id)
+
+      if (certificateIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          error: 'Certificate not found',
+        })
+      }
+
+      const updatedCertificate = {
+        ...req.body,
+        id,
+        order:
+          req.body.order !== undefined ? req.body.order : data.certificates[certificateIndex].order,
+      }
+
+      const validation = certificateSchema.safeParse(updatedCertificate)
+
+      if (!validation.success) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation failed',
+          errors: getValidationErrors(validation.error),
+        })
+      }
+
+      data.certificates[certificateIndex] = validation.data
+      await dataService.updateSection('certificates', data.certificates)
+
+      return res.json({
+        success: true,
+        data: validation.data,
+        message: 'Certificate updated successfully',
+      })
+    } catch (error) {
+      console.error('Certificate update error:', error)
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update certificate',
+      })
+    }
+  },
+)
+
+/**
+ * DELETE /api/content/certificates/:id
+ * Delete a certificate
+ * Requires authentication
+ */
+router.delete(
+  '/certificates/:id',
+  requireAuth,
+  validateCsrfToken,
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params
+      const data = await dataService.loadData()
+      const certificateIndex = data.certificates.findIndex((c) => c.id === id)
+
+      if (certificateIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          error: 'Certificate not found',
+        })
+      }
+
+      data.certificates.splice(certificateIndex, 1)
+      await dataService.updateSection('certificates', data.certificates)
+
+      return res.json({
+        success: true,
+        message: 'Certificate deleted successfully',
+      })
+    } catch (error) {
+      console.error('Certificate deletion error:', error)
+      return res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete certificate',
+      })
+    }
+  },
+)
 
 /**
  * PUT /api/content/experience/:id
  * Update an existing experience entry
  * Requires authentication
  */
-router.put('/experience/:id', requireAuth, validateCsrfToken, async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params
+router.put(
+  '/experience/:id',
+  requireAuth,
+  validateCsrfToken,
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params
 
-    // Load current data
-    const data = await dataService.loadData()
+      // Load current data
+      const data = await dataService.loadData()
 
-    // Find experience by ID
-    const experienceIndex = data.experience.findIndex(e => e.id === id)
+      // Find experience by ID
+      const experienceIndex = data.experience.findIndex((e) => e.id === id)
 
-    if (experienceIndex === -1) {
-      return res.status(404).json({
+      if (experienceIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          error: 'Experience not found',
+        })
+      }
+
+      // Preserve order if not provided
+      const updatedExperience = {
+        ...req.body,
+        id,
+        order:
+          req.body.order !== undefined ? req.body.order : data.experience[experienceIndex].order,
+      }
+
+      // Validate the updated experience
+      const validation = experienceSchema.safeParse(updatedExperience)
+
+      if (!validation.success) {
+        return res.status(400).json({
+          success: false,
+          error: 'Validation failed',
+          errors: getValidationErrors(validation.error),
+        })
+      }
+
+      // Update experience in array
+      data.experience[experienceIndex] = validation.data
+
+      // Update experience section
+      await dataService.updateSection('experience', data.experience)
+
+      // Return updated experience
+      return res.json({
+        success: true,
+        data: validation.data,
+        message: 'Experience updated successfully',
+      })
+    } catch (error) {
+      console.error('Experience update error:', error)
+      return res.status(500).json({
         success: false,
-        error: 'Experience not found'
+        error: error instanceof Error ? error.message : 'Failed to update experience',
       })
     }
-
-    // Preserve order if not provided
-    const updatedExperience = {
-      ...req.body,
-      id,
-      order: req.body.order !== undefined ? req.body.order : data.experience[experienceIndex].order
-    }
-
-    // Validate the updated experience
-    const validation = experienceSchema.safeParse(updatedExperience)
-
-    if (!validation.success) {
-      return res.status(400).json({
-        success: false,
-        error: 'Validation failed',
-        errors: getValidationErrors(validation.error)
-      })
-    }
-
-    // Update experience in array
-    data.experience[experienceIndex] = validation.data
-
-    // Update experience section
-    await dataService.updateSection('experience', data.experience)
-
-    // Return updated experience
-    return res.json({
-      success: true,
-      data: validation.data,
-      message: 'Experience updated successfully'
-    })
-  } catch (error) {
-    console.error('Experience update error:', error)
-    return res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to update experience'
-    })
-  }
-})
+  },
+)
 
 /**
  * DELETE /api/content/experience/:id
  * Delete an experience entry
  * Requires authentication
  */
-router.delete('/experience/:id', requireAuth, validateCsrfToken, async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params
+router.delete(
+  '/experience/:id',
+  requireAuth,
+  validateCsrfToken,
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params
 
-    // Load current data
-    const data = await dataService.loadData()
+      // Load current data
+      const data = await dataService.loadData()
 
-    // Find experience by ID
-    const experienceIndex = data.experience.findIndex(e => e.id === id)
+      // Find experience by ID
+      const experienceIndex = data.experience.findIndex((e) => e.id === id)
 
-    if (experienceIndex === -1) {
-      return res.status(404).json({
+      if (experienceIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          error: 'Experience not found',
+        })
+      }
+
+      // Remove experience from array
+      data.experience.splice(experienceIndex, 1)
+
+      // Update experience section
+      await dataService.updateSection('experience', data.experience)
+
+      // Return success
+      return res.json({
+        success: true,
+        message: 'Experience deleted successfully',
+      })
+    } catch (error) {
+      console.error('Experience deletion error:', error)
+      return res.status(500).json({
         success: false,
-        error: 'Experience not found'
+        error: error instanceof Error ? error.message : 'Failed to delete experience',
       })
     }
-
-    // Remove experience from array
-    data.experience.splice(experienceIndex, 1)
-
-    // Update experience section
-    await dataService.updateSection('experience', data.experience)
-
-    // Return success
-    return res.json({
-      success: true,
-      message: 'Experience deleted successfully'
-    })
-  } catch (error) {
-    console.error('Experience deletion error:', error)
-    return res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to delete experience'
-    })
-  }
-})
+  },
+)
 
 /**
  * PUT /api/content/contact
@@ -686,7 +889,7 @@ router.put('/contact', requireAuth, validateCsrfToken, async (req: Request, res:
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
-        errors: getValidationErrors(validation.error)
+        errors: getValidationErrors(validation.error),
       })
     }
 
@@ -697,13 +900,13 @@ router.put('/contact', requireAuth, validateCsrfToken, async (req: Request, res:
     return res.json({
       success: true,
       data: validation.data,
-      message: 'Contact section updated successfully'
+      message: 'Contact section updated successfully',
     })
   } catch (error) {
     console.error('Contact update error:', error)
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to update contact section'
+      error: error instanceof Error ? error.message : 'Failed to update contact section',
     })
   }
 })
@@ -731,7 +934,7 @@ router.get('/backup', requireAuth, async (req: Request, res: Response) => {
     console.error('Backup error:', error)
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to generate backup'
+      error: error instanceof Error ? error.message : 'Failed to generate backup',
     })
   }
 })
@@ -747,20 +950,20 @@ router.get('/backups', requireAuth, async (req: Request, res: Response) => {
     const backups = await dataService.listBackups()
 
     // Return just the filenames (not full paths) for security
-    const backupFilenames = backups.map(b => {
+    const backupFilenames = backups.map((b) => {
       const parts = b.replace(/\\/g, '/').split('/')
       return parts[parts.length - 1]
     })
 
     return res.json({
       success: true,
-      data: backupFilenames
+      data: backupFilenames,
     })
   } catch (error) {
     console.error('List backups error:', error)
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to list backups'
+      error: error instanceof Error ? error.message : 'Failed to list backups',
     })
   }
 })
@@ -780,7 +983,7 @@ router.post('/restore', requireAuth, validateCsrfToken, async (req: Request, res
     if (!backupFilename || typeof backupFilename !== 'string') {
       return res.status(400).json({
         success: false,
-        error: 'backupFilename is required'
+        error: 'backupFilename is required',
       })
     }
 
@@ -789,7 +992,7 @@ router.post('/restore', requireAuth, validateCsrfToken, async (req: Request, res
     if (!sanitized || sanitized !== backupFilename) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid backup filename'
+        error: 'Invalid backup filename',
       })
     }
 
@@ -797,13 +1000,13 @@ router.post('/restore', requireAuth, validateCsrfToken, async (req: Request, res
     if (!sanitized.endsWith('.backup')) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid backup filename: must end with .backup'
+        error: 'Invalid backup filename: must end with .backup',
       })
     }
 
     // List available backups and verify the requested one exists
     const availableBackups = await dataService.listBackups()
-    const matchingBackup = availableBackups.find(b => {
+    const matchingBackup = availableBackups.find((b) => {
       const parts = b.replace(/\\/g, '/').split('/')
       return parts[parts.length - 1] === sanitized
     })
@@ -811,7 +1014,7 @@ router.post('/restore', requireAuth, validateCsrfToken, async (req: Request, res
     if (!matchingBackup) {
       return res.status(404).json({
         success: false,
-        error: 'Backup file not found'
+        error: 'Backup file not found',
       })
     }
 
@@ -820,13 +1023,13 @@ router.post('/restore', requireAuth, validateCsrfToken, async (req: Request, res
 
     return res.json({
       success: true,
-      message: `Portfolio data restored from backup: ${sanitized}`
+      message: `Portfolio data restored from backup: ${sanitized}`,
     })
   } catch (error) {
     console.error('Restore error:', error)
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to restore from backup'
+      error: error instanceof Error ? error.message : 'Failed to restore from backup',
     })
   }
 })

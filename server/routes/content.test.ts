@@ -157,6 +157,7 @@ describe('Content Routes', () => {
         },
         skills: [],
         projects: [],
+        certificates: [],
         experience: [],
         contact: {
           email: 'jane@example.com',
@@ -180,6 +181,7 @@ describe('Content Routes', () => {
       expect(response.body.data).toHaveProperty('about')
       expect(response.body.data).toHaveProperty('skills')
       expect(response.body.data).toHaveProperty('projects')
+      expect(response.body.data).toHaveProperty('certificates')
       expect(response.body.data).toHaveProperty('experience')
       expect(response.body.data).toHaveProperty('contact')
       expect(response.body.data).toHaveProperty('metadata')

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { randomBytes } from 'crypto'
+import { randomBytes, timingSafeEqual as cryptoTimingSafeEqual } from 'crypto'
 
 const CSRF_TOKEN_COOKIE = 'csrf_token'
 const CSRF_HEADER = 'x-csrf-token'
@@ -18,8 +18,16 @@ export function generateCsrfToken(): string {
  */
 export function setCsrfToken(req: Request, res: Response, next: NextFunction): void {
   const token = generateCsrfToken()
+
+  setCsrfTokenCookie(res, token)
   
-  // Store token in cookie (not HTTP-only so client can read it)
+  // Store token in request for later use
+  req.csrfToken = token
+  
+  next()
+}
+
+export function setCsrfTokenCookie(res: Response, token: string): void {
   res.cookie(CSRF_TOKEN_COOKIE, token, {
     httpOnly: false, // Client needs to read this
     secure: process.env.NODE_ENV === 'production',
@@ -27,11 +35,6 @@ export function setCsrfToken(req: Request, res: Response, next: NextFunction): v
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     path: '/'
   })
-  
-  // Store token in request for later use
-  req.csrfToken = token
-  
-  next()
 }
 
 /**
@@ -46,12 +49,13 @@ export function validateCsrfToken(req: Request, res: Response, next: NextFunctio
   
   // Get token from cookie
   const cookieToken = req.cookies[CSRF_TOKEN_COOKIE]
+  const cookieTokens = getCookieValues(req.headers.cookie, CSRF_TOKEN_COOKIE)
   
   // Get token from header
   const headerToken = req.headers[CSRF_HEADER] as string
   
   // Check if both tokens exist
-  if (!cookieToken || !headerToken) {
+  if ((!cookieToken && cookieTokens.length === 0) || !headerToken) {
     return res.status(403).json({
       success: false,
       error: 'CSRF token missing'
@@ -59,7 +63,10 @@ export function validateCsrfToken(req: Request, res: Response, next: NextFunctio
   }
   
   // Validate tokens match (constant-time comparison to prevent timing attacks)
-  if (!timingSafeEqual(cookieToken, headerToken)) {
+  const candidates = [...new Set([cookieToken, ...cookieTokens].filter(Boolean))]
+  const hasMatchingToken = candidates.some((token) => timingSafeEqual(token, headerToken))
+
+  if (!hasMatchingToken) {
     return res.status(403).json({
       success: false,
       error: 'Invalid CSRF token'
@@ -67,6 +74,28 @@ export function validateCsrfToken(req: Request, res: Response, next: NextFunctio
   }
   
   next()
+}
+
+/**
+ * Read every cookie value with the requested name from the raw Cookie header.
+ * Browsers can temporarily send duplicate cookies with the same name when an
+ * old development cookie is stuck on another path/domain variant.
+ */
+function getCookieValues(cookieHeader: string | undefined, name: string): string[] {
+  if (!cookieHeader) return []
+
+  return cookieHeader
+    .split(';')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.startsWith(`${name}=`))
+    .map((entry) => {
+      const value = entry.slice(name.length + 1)
+      try {
+        return decodeURIComponent(value)
+      } catch {
+        return value
+      }
+    })
 }
 
 /**
@@ -83,10 +112,8 @@ function timingSafeEqual(a: string, b: string): boolean {
   const bufferA = Buffer.from(a)
   const bufferB = Buffer.from(b)
   
-  // Use crypto.timingSafeEqual for constant-time comparison
   try {
-    const crypto = require('crypto')
-    return crypto.timingSafeEqual(bufferA, bufferB)
+    return cryptoTimingSafeEqual(bufferA, bufferB)
   } catch {
     return false
   }

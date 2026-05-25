@@ -2,6 +2,8 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import TextInput from '@/components/admin/forms/TextInput.vue'
+import AdminSectionPreview from '@/components/admin/AdminSectionPreview.vue'
+import ContactSection from '@/components/ContactSection.vue'
 import { useContentStore } from '@/stores/content'
 import { useUiStore } from '@/stores/ui'
 import type { ContactContent, SocialLink } from '@/types'
@@ -46,6 +48,23 @@ const socialLinkForm = ref<Omit<SocialLink, 'id'>>({
 /** Validation errors for the social link sub-form */
 const socialLinkErrors = ref<Record<string, string>>({})
 
+const iconPresets = [
+  { icon: 'github', label: 'GitHub', href: 'https://github.com/LyncX9', short: 'GH' },
+  {
+    icon: 'gmail',
+    label: 'Gmail',
+    href: 'https://mail.google.com/mail/?view=cm&fs=1&to=bagaskazama3818%40gmail.com',
+    short: 'GM'
+  },
+  { icon: 'whatsapp', label: 'WhatsApp', href: 'https://wa.me/6281234567890', short: 'WA' },
+  {
+    icon: 'linkedin',
+    label: 'LinkedIn',
+    href: 'https://www.linkedin.com/in/bagas-firmansyah-a4a16a262',
+    short: 'IN',
+  },
+]
+
 // ─── Computed ─────────────────────────────────────────────────────────────────
 
 /** True when the form has unsaved changes */
@@ -59,6 +78,31 @@ const isValid = computed<boolean>(() => Object.keys(validationErrors.value).leng
 
 /** True when the save button should be enabled */
 const canSave = computed<boolean>(() => isDirty.value && isValid.value && !isSaving.value)
+
+const previewContact = computed<ContactContent>(() => {
+  const links = formData.value.socialLinks.map((link) => ({ ...link }))
+  if (showSocialLinkForm.value) {
+    const draft: SocialLink = {
+      id: editingLinkIndex.value === -1
+        ? 'draft-social-link'
+        : formData.value.socialLinks[editingLinkIndex.value]?.id ?? 'draft-social-link',
+      icon: socialLinkForm.value.icon || 'LK',
+      label: socialLinkForm.value.label || 'Social Link',
+      href: socialLinkForm.value.href || '#',
+    }
+
+    if (editingLinkIndex.value >= 0) {
+      links[editingLinkIndex.value] = draft
+    } else {
+      links.push(draft)
+    }
+  }
+
+  return {
+    ...formData.value,
+    socialLinks: links,
+  }
+})
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 
@@ -164,6 +208,25 @@ function openEditSocialLink(index: number): void {
 function cancelSocialLinkForm(): void {
   showSocialLinkForm.value = false
   socialLinkErrors.value = {}
+}
+
+function applyIconPreset(preset: (typeof iconPresets)[number]): void {
+  socialLinkForm.value = {
+    icon: preset.icon,
+    label: socialLinkForm.value.label || preset.label,
+    href: socialLinkForm.value.href || preset.href,
+  }
+}
+
+function getSocialIconBadge(link: Pick<SocialLink, 'icon' | 'label'>): string {
+  const key = `${link.icon} ${link.label}`.toLowerCase()
+
+  if (key.includes('github')) return 'GH'
+  if (key.includes('gmail') || key.includes('email') || key.includes('mail')) return 'GM'
+  if (key.includes('whatsapp') || key.includes('wa')) return 'WA'
+  if (key.includes('linkedin')) return 'IN'
+
+  return 'LK'
 }
 
 /** Validate the social link sub-form fields */
@@ -334,6 +397,8 @@ function handleBeforeUnload(event: BeforeUnloadEvent): void {
       novalidate
       @submit.prevent="handleSave"
     >
+      <div class="editor-workspace">
+        <div class="editor-fields">
       <!-- ── Contact details ───────────────────────────────────────────── -->
       <section class="form-section" aria-labelledby="contact-details-heading">
         <div class="form-section__header">
@@ -369,7 +434,7 @@ function handleBeforeUnload(event: BeforeUnloadEvent): void {
         <div class="form-section__header">
           <h2 id="social-links-heading" class="form-section__title">Social Links</h2>
           <p class="form-section__description">
-            Links to your social profiles. Each link requires an icon class, a label, and a URL.
+            Links to your social profiles. Use icon names like github, gmail, whatsapp, or linkedin.
           </p>
         </div>
 
@@ -390,7 +455,9 @@ function handleBeforeUnload(event: BeforeUnloadEvent): void {
             class="social-link-item"
           >
             <div class="social-link-item__info">
-              <span class="social-link-item__icon" :class="link.icon" aria-hidden="true" />
+              <span class="social-link-item__icon" aria-hidden="true">
+                {{ getSocialIconBadge(link) }}
+              </span>
               <div class="social-link-item__details">
                 <span class="social-link-item__label">{{ link.label }}</span>
                 <span class="social-link-item__href">{{ link.href }}</span>
@@ -436,11 +503,25 @@ function handleBeforeUnload(event: BeforeUnloadEvent): void {
             {{ editingLinkIndex === -1 ? 'Add Social Link' : 'Edit Social Link' }}
           </h3>
 
+          <div class="icon-presets" aria-label="Icon presets">
+            <button
+              v-for="preset in iconPresets"
+              :key="preset.icon"
+              type="button"
+              class="icon-preset"
+              :class="{ 'icon-preset--active': socialLinkForm.icon === preset.icon }"
+              @click="applyIconPreset(preset)"
+            >
+              <span class="icon-preset__badge" aria-hidden="true">{{ preset.short }}</span>
+              <span>{{ preset.label }}</span>
+            </button>
+          </div>
+
           <div class="form-grid">
             <TextInput
               v-model="socialLinkForm.icon"
-              label="Icon Class"
-              placeholder="e.g. fab fa-github"
+              label="Icon"
+              placeholder="github, gmail, whatsapp, or linkedin"
               :required="true"
               :error="socialLinkErrors['icon']"
             />
@@ -503,6 +584,15 @@ function handleBeforeUnload(event: BeforeUnloadEvent): void {
           {{ isSaving ? 'Saving…' : 'Save Changes' }}
         </button>
       </div>
+        </div>
+
+        <AdminSectionPreview
+          title="Contact section"
+          subtitle="Email, subtitle, dan social link langsung tampil di sini."
+        >
+          <ContactSection :contact="previewContact" />
+        </AdminSectionPreview>
+      </div>
     </form>
   </div>
 </template>
@@ -513,7 +603,7 @@ function handleBeforeUnload(event: BeforeUnloadEvent): void {
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  max-width: 800px;
+  max-width: none;
   padding: 1.5rem;
 }
 
@@ -578,6 +668,17 @@ function handleBeforeUnload(event: BeforeUnloadEvent): void {
 
 /* ── Form ────────────────────────────────────────────────────────────────── */
 .editor-form {
+  display: block;
+}
+
+.editor-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(min(560px, 100%), 1.1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.editor-fields {
   display: flex;
   flex-direction: column;
   gap: 2rem;
@@ -650,7 +751,17 @@ function handleBeforeUnload(event: BeforeUnloadEvent): void {
 }
 
 .social-link-item__icon {
-  font-size: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: rgba(168, 85, 247, 0.14);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
   color: var(--color-primary, #a855f7);
   flex-shrink: 0;
 }
@@ -697,6 +808,55 @@ function handleBeforeUnload(event: BeforeUnloadEvent): void {
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--color-text);
+}
+
+.icon-presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.icon-preset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.75rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.icon-preset:hover,
+.icon-preset--active {
+  border-color: var(--color-primary, #a855f7);
+  background: rgba(168, 85, 247, 0.14);
+  transform: translateY(-1px);
+}
+
+.icon-preset__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.16);
+  color: #67e8f9;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  flex-shrink: 0;
 }
 
 .social-link-form__actions {
@@ -851,6 +1011,12 @@ function handleBeforeUnload(event: BeforeUnloadEvent): void {
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .editor-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .contact-editor {
     padding: 1rem;
@@ -875,6 +1041,10 @@ function handleBeforeUnload(event: BeforeUnloadEvent): void {
 
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .icon-presets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .full-width {

@@ -1,5 +1,11 @@
 import { z } from 'zod'
 
+const imagePathSchema = z.string().refine((value) => {
+  if (!value) return false
+  if (value.startsWith('/') || value.startsWith('./') || value.startsWith('../')) return true
+  return z.string().url().safeParse(value).success
+}, 'Must be a valid URL or image path')
+
 // Hero validation schema
 export const heroSchema = z.object({
   greeting: z.string().min(1, 'Greeting is required'),
@@ -7,15 +13,19 @@ export const heroSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
   bio: z.string().min(1, 'Bio is required'),
-  profileImage: z.string().url('Must be a valid URL'),
-  universityLink: z.string().url('Must be a valid URL')
+  profileImage: imagePathSchema,
+  universityLink: z.string().url('Must be a valid URL'),
 })
 
 // About validation schema
 export const aboutSchema = z.object({
-  paragraphs: z.array(z.string().min(1, 'Paragraph cannot be empty')).min(1, 'At least one paragraph is required'),
-  skills: z.array(z.string().min(1, 'Skill cannot be empty')).min(1, 'At least one skill is required'),
-  aboutImage: z.string().url('Must be a valid URL')
+  paragraphs: z
+    .array(z.string().min(1, 'Paragraph cannot be empty'))
+    .min(1, 'At least one paragraph is required'),
+  skills: z
+    .array(z.string().min(1, 'Skill cannot be empty'))
+    .min(1, 'At least one skill is required'),
+  aboutImage: imagePathSchema,
 })
 
 // Skill validation schema
@@ -24,7 +34,7 @@ export const skillSchema = z.object({
   name: z.string().min(1, 'Skill name is required'),
   icon: z.string().min(1, 'Icon is required'),
   category: z.string().min(1, 'Category is required'),
-  order: z.number()
+  order: z.number(),
 })
 
 // Project validation schema
@@ -32,13 +42,29 @@ export const projectSchema = z.object({
   id: z.string(),
   title: z.string().min(1, 'Title is required'),
   category: z.string().min(1, 'Category is required'),
+  categories: z
+    .array(z.string().min(1, 'Category cannot be empty'))
+    .min(1, 'At least one category is required')
+    .optional(),
   description: z.string().min(10, 'Description must be at least 10 characters'),
   features: z.array(z.string()).min(1, 'At least one feature is required'),
-  image: z.string().url('Must be a valid URL'),
+  image: imagePathSchema,
   link: z.string().url('Must be a valid URL'),
   githubLink: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   featured: z.boolean(),
-  order: z.number()
+  order: z.number(),
+})
+
+// Certificate validation schema
+export const certificateSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1, 'Title is required'),
+  issuer: z.string().min(1, 'Issuer is required'),
+  issuedAt: z.string().min(1, 'Issue date is required'),
+  description: z.string().min(10, 'Description must be at least 10 characters'),
+  image: imagePathSchema,
+  credentialUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  order: z.number(),
 })
 
 // Experience validation schema
@@ -47,8 +73,10 @@ export const experienceSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   company: z.string().min(1, 'Company is required'),
   duration: z.string().min(1, 'Duration is required'),
-  descriptions: z.array(z.string().min(1, 'Description cannot be empty')).min(1, 'At least one description is required'),
-  order: z.number()
+  descriptions: z
+    .array(z.string().min(1, 'Description cannot be empty'))
+    .min(1, 'At least one description is required'),
+  order: z.number(),
 })
 
 // Social Link validation schema
@@ -56,14 +84,14 @@ export const socialLinkSchema = z.object({
   id: z.string(),
   icon: z.string().min(1, 'Icon is required'),
   label: z.string().min(1, 'Label is required'),
-  href: z.string().url('Must be a valid URL')
+  href: z.string().url('Must be a valid URL'),
 })
 
 // Contact validation schema
 export const contactSchema = z.object({
   email: z.string().email('Must be a valid email address'),
   subtitle: z.string().min(1, 'Subtitle is required'),
-  socialLinks: z.array(socialLinkSchema).min(1, 'At least one social link is required')
+  socialLinks: z.array(socialLinkSchema).min(1, 'At least one social link is required'),
 })
 
 // Email validation
@@ -75,7 +103,7 @@ export const urlSchema = z.string().url('Must be a valid URL')
 // Auth credentials validation
 export const authCredentialsSchema = z.object({
   username: z.string().min(1, 'Username is required'),
-  password: z.string().min(1, 'Password is required')
+  password: z.string().min(1, 'Password is required'),
 })
 
 // Complete portfolio data validation
@@ -84,12 +112,13 @@ export const portfolioDataSchema = z.object({
   about: aboutSchema,
   skills: z.array(skillSchema),
   projects: z.array(projectSchema),
+  certificates: z.array(certificateSchema).default([]),
   experience: z.array(experienceSchema),
   contact: contactSchema,
   metadata: z.object({
     lastUpdated: z.string(),
-    version: z.string()
-  })
+    version: z.string(),
+  }),
 })
 
 // Type inference from schemas
@@ -97,6 +126,7 @@ export type HeroSchemaType = z.infer<typeof heroSchema>
 export type AboutSchemaType = z.infer<typeof aboutSchema>
 export type SkillSchemaType = z.infer<typeof skillSchema>
 export type ProjectSchemaType = z.infer<typeof projectSchema>
+export type CertificateSchemaType = z.infer<typeof certificateSchema>
 export type ExperienceSchemaType = z.infer<typeof experienceSchema>
 export type ContactSchemaType = z.infer<typeof contactSchema>
 export type PortfolioDataSchemaType = z.infer<typeof portfolioDataSchema>
@@ -111,7 +141,7 @@ export type PortfolioDataSchemaType = z.infer<typeof portfolioDataSchema>
  */
 export function validateData<T>(
   schema: z.ZodSchema<T>,
-  data: unknown
+  data: unknown,
 ): { success: true; data: T } | { success: false; errors: z.ZodError } {
   const result = schema.safeParse(data)
   if (result.success) {
@@ -209,7 +239,9 @@ export function validateArrayNotEmpty<T>(array: T[], fieldName: string = 'Array'
  * @returns Array of error messages (empty if all validations pass)
  */
 export function validateMultiple(validations: (() => string | null)[]): string[] {
-  return validations.map((validate) => validate()).filter((error): error is string => error !== null)
+  return validations
+    .map((validate) => validate())
+    .filter((error): error is string => error !== null)
 }
 
 /**

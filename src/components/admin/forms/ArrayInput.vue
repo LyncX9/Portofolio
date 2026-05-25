@@ -129,13 +129,7 @@ function resetDrag() {
         @dragend="onDragEnd"
       >
         <!-- Drag handle -->
-        <span
-          class="array-input__drag-handle"
-          aria-hidden="true"
-          title="Drag to reorder"
-        >
-          ⠿
-        </span>
+        <span class="array-input__drag-handle" aria-hidden="true" title="Drag to reorder"> ⠿ </span>
 
         <!-- Item text -->
         <span class="array-input__item-text">{{ item }}</span>
@@ -290,11 +284,13 @@ function resetDrag() {
 /* ── Add row ─────────────────────────────────────────────────────────────── */
 .array-input__add-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
 .array-input__text-input {
-  flex: 1;
+  flex: 1 1 14rem;
+  min-width: 0;
   padding: 0.625rem 0.875rem;
   background-color: var(--color-background-secondary);
   border: 1px solid var(--color-border);
@@ -319,6 +315,8 @@ function resetDrag() {
 }
 
 .array-input__add-btn {
+  flex: 0 1 9.5rem;
+  max-width: 100%;
   padding: 0.625rem 1.125rem;
   background-color: var(--color-primary);
   color: #ffffff;
@@ -339,5 +337,11 @@ function resetDrag() {
 .array-input__add-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+  .array-input__add-btn {
+    flex-basis: 100%;
+  }
 }
 </style>

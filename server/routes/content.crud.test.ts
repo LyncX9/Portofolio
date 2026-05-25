@@ -10,16 +10,16 @@ import { validateSession } from '../auth/sessions'
 vi.mock('../services/dataService', () => ({
   dataService: {
     loadData: vi.fn(),
-    updateSection: vi.fn()
-  }
+    updateSection: vi.fn(),
+  },
 }))
 
 vi.mock('../auth/sessions', () => ({
-  validateSession: vi.fn()
+  validateSession: vi.fn(),
 }))
 
 vi.mock('../middleware/csrf', () => ({
-  validateCsrfToken: vi.fn((req, res, next) => next())
+  validateCsrfToken: vi.fn((req, res, next) => next()),
 }))
 
 describe('Content CRUD Routes', () => {
@@ -33,10 +33,10 @@ describe('Content CRUD Routes', () => {
     app.use(express.json())
     app.use(cookieParser())
     app.use('/api/content', contentRoutes)
-    
+
     // Clear all mocks
     vi.clearAllMocks()
-    
+
     // Default mock for valid session
     vi.mocked(validateSession).mockReturnValue(mockSession)
   })
@@ -50,7 +50,7 @@ describe('Content CRUD Routes', () => {
         description: 'A passionate developer',
         bio: 'Bio text',
         profileImage: 'https://example.com/profile.jpg',
-        universityLink: 'https://university.edu'
+        universityLink: 'https://university.edu',
       }
 
       vi.mocked(dataService.updateSection).mockResolvedValue()
@@ -67,9 +67,7 @@ describe('Content CRUD Routes', () => {
     })
 
     it('should return 401 without authentication', async () => {
-      const response = await request(app)
-        .put('/api/content/hero')
-        .send({})
+      const response = await request(app).put('/api/content/hero').send({})
 
       expect(response.status).toBe(401)
       expect(response.body.success).toBe(false)
@@ -78,7 +76,7 @@ describe('Content CRUD Routes', () => {
     it('should return 400 with invalid data', async () => {
       const invalidData = {
         greeting: '',
-        name: 'John'
+        name: 'John',
       }
 
       const response = await request(app)
@@ -97,7 +95,7 @@ describe('Content CRUD Routes', () => {
       const aboutData = {
         paragraphs: ['Paragraph 1', 'Paragraph 2'],
         skills: ['JavaScript', 'TypeScript'],
-        aboutImage: 'https://example.com/about.jpg'
+        aboutImage: 'https://example.com/about.jpg',
       }
 
       vi.mocked(dataService.updateSection).mockResolvedValue()
@@ -117,7 +115,7 @@ describe('Content CRUD Routes', () => {
       const invalidData = {
         paragraphs: [],
         skills: ['JavaScript'],
-        aboutImage: 'https://example.com/about.jpg'
+        aboutImage: 'https://example.com/about.jpg',
       }
 
       const response = await request(app)
@@ -133,15 +131,13 @@ describe('Content CRUD Routes', () => {
   describe('POST /api/content/skills', () => {
     it('should create a new skill', async () => {
       const mockData = {
-        skills: [
-          { id: '1', name: 'JavaScript', icon: 'js', category: 'Frontend', order: 0 }
-        ],
+        skills: [{ id: '1', name: 'JavaScript', icon: 'js', category: 'Frontend', order: 0 }],
         hero: {},
         about: {},
         projects: [],
         experience: [],
         contact: {},
-        metadata: {}
+        metadata: {},
       }
 
       vi.mocked(dataService.loadData).mockResolvedValue(mockData as any)
@@ -150,7 +146,7 @@ describe('Content CRUD Routes', () => {
       const newSkill = {
         name: 'TypeScript',
         icon: 'ts',
-        category: 'Frontend'
+        category: 'Frontend',
       }
 
       const response = await request(app)
@@ -167,7 +163,7 @@ describe('Content CRUD Routes', () => {
 
     it('should return 400 with missing required fields', async () => {
       const invalidSkill = {
-        name: 'TypeScript'
+        name: 'TypeScript',
       }
 
       const response = await request(app)
@@ -183,15 +179,13 @@ describe('Content CRUD Routes', () => {
   describe('PUT /api/content/skills/:id', () => {
     it('should update an existing skill', async () => {
       const mockData = {
-        skills: [
-          { id: 'skill-1', name: 'JavaScript', icon: 'js', category: 'Frontend', order: 0 }
-        ],
+        skills: [{ id: 'skill-1', name: 'JavaScript', icon: 'js', category: 'Frontend', order: 0 }],
         hero: {},
         about: {},
         projects: [],
         experience: [],
         contact: {},
-        metadata: {}
+        metadata: {},
       }
 
       vi.mocked(dataService.loadData).mockResolvedValue(mockData as any)
@@ -200,7 +194,7 @@ describe('Content CRUD Routes', () => {
       const updatedSkill = {
         name: 'JavaScript ES6',
         icon: 'js-new',
-        category: 'Frontend'
+        category: 'Frontend',
       }
 
       const response = await request(app)
@@ -221,7 +215,7 @@ describe('Content CRUD Routes', () => {
         projects: [],
         experience: [],
         contact: {},
-        metadata: {}
+        metadata: {},
       }
 
       vi.mocked(dataService.loadData).mockResolvedValue(mockData as any)
@@ -239,15 +233,13 @@ describe('Content CRUD Routes', () => {
   describe('DELETE /api/content/skills/:id', () => {
     it('should delete a skill', async () => {
       const mockData = {
-        skills: [
-          { id: 'skill-1', name: 'JavaScript', icon: 'js', category: 'Frontend', order: 0 }
-        ],
+        skills: [{ id: 'skill-1', name: 'JavaScript', icon: 'js', category: 'Frontend', order: 0 }],
         hero: {},
         about: {},
         projects: [],
         experience: [],
         contact: {},
-        metadata: {}
+        metadata: {},
       }
 
       vi.mocked(dataService.loadData).mockResolvedValue(mockData as any)
@@ -270,7 +262,7 @@ describe('Content CRUD Routes', () => {
         projects: [],
         experience: [],
         contact: {},
-        metadata: {}
+        metadata: {},
       }
 
       vi.mocked(dataService.loadData).mockResolvedValue(mockData as any)
@@ -288,7 +280,7 @@ describe('Content CRUD Routes', () => {
     it('should reorder skills', async () => {
       const reorderedSkills = [
         { id: 'skill-2', name: 'TypeScript', icon: 'ts', category: 'Frontend', order: 0 },
-        { id: 'skill-1', name: 'JavaScript', icon: 'js', category: 'Frontend', order: 1 }
+        { id: 'skill-1', name: 'JavaScript', icon: 'js', category: 'Frontend', order: 1 },
       ]
 
       vi.mocked(dataService.updateSection).mockResolvedValue()
@@ -323,7 +315,7 @@ describe('Content CRUD Routes', () => {
         about: {},
         experience: [],
         contact: {},
-        metadata: {}
+        metadata: {},
       }
 
       vi.mocked(dataService.loadData).mockResolvedValue(mockData as any)
@@ -332,12 +324,13 @@ describe('Content CRUD Routes', () => {
       const newProject = {
         title: 'New Project',
         category: 'Web',
+        categories: ['Web', 'AI', 'Dashboard'],
         description: 'A new web project with many features',
         features: ['Feature 1', 'Feature 2'],
         image: 'https://example.com/project.jpg',
         link: 'https://project.com',
         githubLink: 'https://github.com/user/project',
-        featured: true
+        featured: true,
       }
 
       const response = await request(app)
@@ -350,6 +343,40 @@ describe('Content CRUD Routes', () => {
       expect(response.body.data).toMatchObject(newProject)
       expect(response.body.data.id).toBeDefined()
       expect(response.body.data.order).toBe(0)
+    })
+
+    it('should create a project from multiple categories without a separate category field', async () => {
+      const mockData = {
+        projects: [],
+        skills: [],
+        hero: {},
+        about: {},
+        experience: [],
+        contact: {},
+        metadata: {},
+      }
+
+      vi.mocked(dataService.loadData).mockResolvedValue(mockData as any)
+      vi.mocked(dataService.updateSection).mockResolvedValue()
+
+      const newProject = {
+        title: 'Multi Category Project',
+        categories: ['Web', 'AI', 'Portfolio'],
+        description: 'A project with more than one category',
+        features: ['Feature 1'],
+        image: 'https://example.com/project.jpg',
+        link: 'https://project.com',
+        featured: false,
+      }
+
+      const response = await request(app)
+        .post('/api/content/projects')
+        .set('Cookie', [`admin_session=${validToken}`])
+        .send(newProject)
+
+      expect(response.status).toBe(201)
+      expect(response.body.data.category).toBe('Web')
+      expect(response.body.data.categories).toEqual(['Web', 'AI', 'Portfolio'])
     })
   })
 
@@ -366,15 +393,15 @@ describe('Content CRUD Routes', () => {
             image: 'https://example.com/old.jpg',
             link: 'https://old.com',
             featured: false,
-            order: 0
-          }
+            order: 0,
+          },
         ],
         skills: [],
         hero: {},
         about: {},
         experience: [],
         contact: {},
-        metadata: {}
+        metadata: {},
       }
 
       vi.mocked(dataService.loadData).mockResolvedValue(mockData as any)
@@ -383,12 +410,13 @@ describe('Content CRUD Routes', () => {
       const updatedProject = {
         title: 'New Title',
         category: 'Mobile',
+        categories: ['Mobile', 'API'],
         description: 'New description with enough text',
         features: ['Feature 1', 'Feature 2'],
         image: 'https://example.com/new.jpg',
         link: 'https://new.com',
         githubLink: '',
-        featured: true
+        featured: true,
       }
 
       const response = await request(app)
@@ -415,15 +443,15 @@ describe('Content CRUD Routes', () => {
             image: 'https://example.com/img.jpg',
             link: 'https://link.com',
             featured: false,
-            order: 0
-          }
+            order: 0,
+          },
         ],
         skills: [],
         hero: {},
         about: {},
         experience: [],
         contact: {},
-        metadata: {}
+        metadata: {},
       }
 
       vi.mocked(dataService.loadData).mockResolvedValue(mockData as any)
@@ -447,7 +475,7 @@ describe('Content CRUD Routes', () => {
         about: {},
         projects: [],
         contact: {},
-        metadata: {}
+        metadata: {},
       }
 
       vi.mocked(dataService.loadData).mockResolvedValue(mockData as any)
@@ -457,7 +485,7 @@ describe('Content CRUD Routes', () => {
         title: 'Senior Developer',
         company: 'Tech Corp',
         duration: '2020-2023',
-        descriptions: ['Led development team', 'Implemented new features']
+        descriptions: ['Led development team', 'Implemented new features'],
       }
 
       const response = await request(app)
@@ -482,15 +510,15 @@ describe('Content CRUD Routes', () => {
             company: 'Old Corp',
             duration: '2018-2020',
             descriptions: ['Worked on projects'],
-            order: 0
-          }
+            order: 0,
+          },
         ],
         skills: [],
         hero: {},
         about: {},
         projects: [],
         contact: {},
-        metadata: {}
+        metadata: {},
       }
 
       vi.mocked(dataService.loadData).mockResolvedValue(mockData as any)
@@ -500,7 +528,7 @@ describe('Content CRUD Routes', () => {
         title: 'Senior Developer',
         company: 'New Corp',
         duration: '2018-2023',
-        descriptions: ['Led projects', 'Mentored juniors']
+        descriptions: ['Led projects', 'Mentored juniors'],
       }
 
       const response = await request(app)
@@ -524,15 +552,15 @@ describe('Content CRUD Routes', () => {
             company: 'Corp',
             duration: '2020-2023',
             descriptions: ['Work'],
-            order: 0
-          }
+            order: 0,
+          },
         ],
         skills: [],
         hero: {},
         about: {},
         projects: [],
         contact: {},
-        metadata: {}
+        metadata: {},
       }
 
       vi.mocked(dataService.loadData).mockResolvedValue(mockData as any)
@@ -556,7 +584,7 @@ describe('Content CRUD Routes', () => {
           company: 'Corp B',
           duration: '2020-2023',
           descriptions: ['Work'],
-          order: 0
+          order: 0,
         },
         {
           id: 'exp-1',
@@ -564,8 +592,8 @@ describe('Content CRUD Routes', () => {
           company: 'Corp A',
           duration: '2018-2020',
           descriptions: ['Work'],
-          order: 1
-        }
+          order: 1,
+        },
       ]
 
       vi.mocked(dataService.updateSection).mockResolvedValue()
@@ -590,9 +618,9 @@ describe('Content CRUD Routes', () => {
             id: 'social-1',
             icon: 'github',
             label: 'GitHub',
-            href: 'https://github.com/johndoe'
-          }
-        ]
+            href: 'https://github.com/johndoe',
+          },
+        ],
       }
 
       vi.mocked(dataService.updateSection).mockResolvedValue()
@@ -612,7 +640,7 @@ describe('Content CRUD Routes', () => {
       const invalidData = {
         email: 'not-an-email',
         subtitle: 'Get in touch',
-        socialLinks: []
+        socialLinks: [],
       }
 
       const response = await request(app)

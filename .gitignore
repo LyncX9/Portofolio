@@ -43,3 +43,5 @@ data/sessions.json
 .env
 .env.local
 # .env.production is committed (contains only VITE_API_BASE_URL, no secrets)
+
+.vercel

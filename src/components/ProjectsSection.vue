@@ -1,34 +1,32 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { Project } from '@/types'
 
 const props = defineProps<{
   projects?: Project[] | null
 }>()
 
-// Fallback data used when the store hasn't loaded yet
-const fallbackProjects: Project[] = [
-  {
-    id: '1',
-    title: 'PocketExpenseMonitor',
-    category: 'Featured Project',
-    description: 'A mobile app to track daily expenses and manage budgets effectively.',
-    features: ['Responsive Design', 'Offline Support', 'Data Visualization'],
-    image: '',
-    link: 'https://github.com/LyncX9/PocketExpenseMonitor.git',
-    featured: true,
-    order: 1,
-  },
-]
+const displayProjects = computed(() => props.projects ?? [])
+const failedImages = ref<Set<string>>(new Set())
 
-const displayProjects = computed(() => (props.projects && props.projects.length > 0 ? props.projects : fallbackProjects))
+function markImageFailed(id: string): void {
+  failedImages.value = new Set([...failedImages.value, id])
+}
+
+function projectCategories(project: Project): string[] {
+  return project.categories?.length
+    ? project.categories
+    : project.category
+      ? [project.category]
+      : []
+}
 </script>
 
 <template>
   <section id="projects" class="projects">
     <div class="projects-container">
       <h2 class="section-title">Projects</h2>
-      <div class="projects-grid">
+      <div v-if="displayProjects.length > 0" class="projects-grid">
         <div
           v-for="project in displayProjects"
           :key="project.id"
@@ -36,23 +34,37 @@ const displayProjects = computed(() => (props.projects && props.projects.length 
           :class="{ featured: project.featured }"
         >
           <div class="project-image">
-            <img v-if="project.image" :src="project.image" :alt="project.title" class="project-img" />
+            <img
+              v-if="project.image && !failedImages.has(project.id)"
+              :src="project.image"
+              :alt="project.title"
+              class="project-img"
+              @error="markImageFailed(project.id)"
+            />
             <div v-else class="image-placeholder">
               <svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
-                <rect width="300" height="200" fill="url(#grad)"/>
-                <circle cx="100" cy="80" r="30" fill="#a855f7" opacity="0.5"/>
-                <circle cx="200" cy="120" r="40" fill="#ec4899" opacity="0.4"/>
+                <rect width="300" height="200" fill="url(#grad)" />
+                <circle cx="100" cy="80" r="30" fill="#a855f7" opacity="0.5" />
+                <circle cx="200" cy="120" r="40" fill="#ec4899" opacity="0.4" />
                 <defs>
                   <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:#a855f7;stop-opacity:0.1" />
-                    <stop offset="100%" style="stop-color:#ec4899;stop-opacity:0.1" />
+                    <stop offset="0%" style="stop-color: #a855f7; stop-opacity: 0.1" />
+                    <stop offset="100%" style="stop-color: #ec4899; stop-opacity: 0.1" />
                   </linearGradient>
                 </defs>
               </svg>
             </div>
           </div>
           <div class="project-content">
-            <span class="project-category">{{ project.category }}</span>
+            <div class="project-categories" aria-label="Project categories">
+              <span
+                v-for="category in projectCategories(project)"
+                :key="category"
+                class="project-category"
+              >
+                {{ category }}
+              </span>
+            </div>
             <h3>{{ project.title }}</h3>
             <p class="project-description">{{ project.description }}</p>
             <div class="project-features">
@@ -61,11 +73,30 @@ const displayProjects = computed(() => (props.projects && props.projects.length 
               </span>
             </div>
             <div class="project-links">
-              <a v-if="project.link" :href="project.link" target="_blank" rel="noopener noreferrer" class="project-link">View project →</a>
-              <a v-if="project.githubLink" :href="project.githubLink" target="_blank" rel="noopener noreferrer" class="project-link github-link">GitHub →</a>
+              <a
+                v-if="project.link"
+                :href="project.link"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="project-link"
+                >Live Site</a
+              >
+              <a
+                v-if="project.githubLink"
+                :href="project.githubLink"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="project-link github-link"
+                >GitHub Repo</a
+              >
             </div>
           </div>
         </div>
+      </div>
+
+      <div v-else class="empty-state">
+        <p class="empty-state__title">No projects yet</p>
+        <p class="empty-state__text">Projects you add from the admin dashboard will appear here.</p>
       </div>
     </div>
   </section>
@@ -93,6 +124,30 @@ const displayProjects = computed(() => (props.projects && props.projects.length 
   display: grid;
   grid-template-columns: 1fr;
   gap: 3rem;
+}
+
+.empty-state {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  padding: 2rem;
+  text-align: center;
+  border: 1px dashed rgba(148, 163, 184, 0.26);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.36);
+}
+
+.empty-state__title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.empty-state__text {
+  margin: 0.6rem 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
 }
 
 .project-card {
@@ -153,10 +208,23 @@ const displayProjects = computed(() => (props.projects && props.projects.length 
 }
 
 .project-category {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid rgba(168, 85, 247, 0.42);
+  border-radius: 999px;
+  background: rgba(168, 85, 247, 0.1);
+  padding: 0.25rem 0.65rem;
   font-size: 0.85rem;
   color: var(--color-primary);
   font-weight: 600;
   text-transform: uppercase;
+}
+
+.project-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .project-card h3 {
@@ -197,22 +265,30 @@ const displayProjects = computed(() => (props.projects && props.projects.length 
 
 .project-link {
   align-self: flex-start;
-  color: var(--color-primary);
+  padding: 0.65rem 0.95rem;
+  border: 1px solid rgba(125, 211, 252, 0.28);
+  border-radius: 8px;
+  color: #e0f2fe;
+  background: rgba(56, 189, 248, 0.08);
   font-weight: 600;
   transition: all 0.3s ease;
 }
 
 .project-link:hover {
-  color: var(--color-accent);
-  transform: translateX(5px);
+  color: #ffffff;
+  border-color: rgba(125, 211, 252, 0.62);
+  transform: translateY(-2px);
 }
 
 .github-link {
-  color: var(--color-text-secondary);
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.28);
+  color: #d1fae5;
 }
 
 .github-link:hover {
-  color: var(--color-text);
+  border-color: rgba(16, 185, 129, 0.58);
+  color: #ffffff;
 }
 
 @media (max-width: 768px) {

@@ -5,10 +5,12 @@ import { useAuthStore } from '@/stores/authStore'
 // ─── Admin views (lazy-loaded for code splitting) ─────────────────────────────
 const LoginView = () => import('../views/admin/LoginView.vue')
 const AdminDashboard = () => import('../views/admin/AdminDashboard.vue')
+const DashboardHome = () => import('../views/admin/DashboardHome.vue')
 const HeroEditor = () => import('../views/admin/HeroEditor.vue')
 const AboutEditor = () => import('../views/admin/AboutEditor.vue')
 const SkillsManager = () => import('../views/admin/SkillsManager.vue')
 const ProjectsManager = () => import('../views/admin/ProjectsManager.vue')
+const CertificatesManager = () => import('../views/admin/CertificatesManager.vue')
 const ExperienceManager = () => import('../views/admin/ExperienceManager.vue')
 const ContactEditor = () => import('../views/admin/ContactEditor.vue')
 
@@ -44,6 +46,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
       children: [
         {
+          path: '',
+          name: 'admin-dashboard',
+          component: DashboardHome,
+          meta: { requiresAuth: true },
+        },
+        {
           path: 'hero',
           name: 'admin-hero',
           component: HeroEditor,
@@ -65,6 +73,12 @@ const router = createRouter({
           path: 'projects',
           name: 'admin-projects',
           component: ProjectsManager,
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'certificates',
+          name: 'admin-certificates',
+          component: CertificatesManager,
           meta: { requiresAuth: true },
         },
         {

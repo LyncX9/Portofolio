@@ -102,9 +102,13 @@ export const useAuthStore = defineStore('auth', () => {
         isAuthenticated.value = true
         user.value = response.data.user
         
-        // Update session expiration if provided
-        if (session.value && response.data.expiresAt) {
-          session.value.expiresAt = response.data.expiresAt
+        if (response.data.expiresAt) {
+          session.value = {
+            token: session.value?.token ?? '',
+            username: response.data.user.username,
+            expiresAt: response.data.expiresAt,
+            csrfToken: response.data.csrfToken
+          }
         }
         
         return true

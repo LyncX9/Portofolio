@@ -6,33 +6,14 @@ const props = defineProps<{
   experience?: Experience[] | null
 }>()
 
-// Fallback data used when the store hasn't loaded yet
-const fallbackExperience: Experience[] = [
-  {
-    id: '1',
-    title: 'Network Technician (Fiber Optic)',
-    company: 'PT Putra Jaya Raharja',
-    duration: '2022 - 2023',
-    descriptions: [
-      'Installing and terminating fiber optic cables for customer network needs.',
-      'Handling internet outage troubleshooting in the field, including connection checks, loss measurements, and connector repairs.',
-      'Coordinating with the backend team to ensure tickets are resolved quickly and accurately.',
-      'Performing routine network maintenance to maintain connection quality and minimize downtime.',
-    ],
-    order: 1,
-  },
-]
-
-const displayExperience = computed(() =>
-  props.experience && props.experience.length > 0 ? props.experience : fallbackExperience
-)
+const displayExperience = computed(() => props.experience ?? [])
 </script>
 
 <template>
   <section id="experience" class="experience">
     <div class="experience-container">
       <h2 class="section-title">Work Experience</h2>
-      <div class="experience-grid">
+      <div v-if="displayExperience.length > 0" class="experience-grid">
         <div v-for="exp in displayExperience" :key="exp.id" class="experience-card">
           <div class="card-icon">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -49,6 +30,11 @@ const displayExperience = computed(() =>
             </li>
           </ul>
         </div>
+      </div>
+
+      <div v-else class="empty-state">
+        <p class="empty-state__title">No work experience yet</p>
+        <p class="empty-state__text">Work experience you add from the admin dashboard will appear here.</p>
       </div>
     </div>
   </section>
@@ -96,6 +82,30 @@ const displayExperience = computed(() =>
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 2rem;
+}
+
+.empty-state {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  padding: 2rem;
+  text-align: center;
+  border: 1px dashed rgba(148, 163, 184, 0.26);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.36);
+}
+
+.empty-state__title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.empty-state__text {
+  margin: 0.6rem 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
 }
 
 .experience-card {

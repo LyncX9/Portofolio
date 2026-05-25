@@ -17,6 +17,17 @@ const fallbackSkills: Skill[] = [
 const displaySkills = computed(() =>
   props.skills && props.skills.length > 0 ? props.skills : fallbackSkills
 )
+
+function iconLabel(icon: string, name: string): string {
+  if (!icon || icon.includes('-')) {
+    return name.slice(0, 2).toUpperCase()
+  }
+  return icon
+}
+
+function isImageIcon(icon: string): boolean {
+  return /\.(png|jpe?g|gif|webp|svg)$/i.test(icon) || icon.startsWith('/uploads/')
+}
 </script>
 
 <template>
@@ -32,7 +43,15 @@ const displaySkills = computed(() =>
 
       <div class="tech-grid">
         <div v-for="tech in displaySkills" :key="tech.id" class="tech-item">
-          <div class="tech-icon">{{ tech.icon }}</div>
+          <div class="tech-icon">
+            <img
+              v-if="isImageIcon(tech.icon)"
+              :src="tech.icon"
+              :alt="`${tech.name} icon`"
+              class="tech-icon-img"
+            />
+            <span v-else>{{ iconLabel(tech.icon, tech.name) }}</span>
+          </div>
           <span class="tech-name">{{ tech.name }}</span>
         </div>
       </div>
@@ -111,7 +130,23 @@ const displaySkills = computed(() =>
 }
 
 .tech-icon {
-  font-size: 2rem;
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(16, 185, 129, 0.12));
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  color: #e0f2fe;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.tech-icon-img {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
 }
 
 .tech-name {

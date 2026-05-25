@@ -1,6 +1,11 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { writeDataAtomic, readDataWithRetry, listBackups, restoreFromBackup } from '../utils/fileOperations'
+import {
+  writeDataAtomic,
+  readDataWithRetry,
+  listBackups,
+  restoreFromBackup,
+} from '../utils/fileOperations'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -42,12 +47,23 @@ export interface PortfolioData {
     id: string
     title: string
     category: string
+    categories?: string[]
     description: string
     features: string[]
     image: string
     link: string
     githubLink?: string
     featured: boolean
+    order: number
+  }>
+  certificates: Array<{
+    id: string
+    title: string
+    issuer: string
+    issuedAt: string
+    description: string
+    image: string
+    credentialUrl?: string
     order: number
   }>
   experience: Array<{
@@ -138,7 +154,7 @@ export class DataService {
       throw new Error(`Supabase read error: ${error.message}`)
     }
 
-    const portfolioData = data.data as PortfolioData
+    const portfolioData = this.normalizeData(data.data as PortfolioData)
 
     if (!portfolioData?.metadata || !portfolioData?.hero || !portfolioData?.about) {
       throw new Error('Invalid portfolio data structure in Supabase')
@@ -154,7 +170,7 @@ export class DataService {
       .from('portfolio_data')
       .upsert(
         { id: PORTFOLIO_ROW_ID, data: portfolioData, updated_at: new Date().toISOString() },
-        { onConflict: 'id' }
+        { onConflict: 'id' },
       )
 
     if (error) {
@@ -166,7 +182,7 @@ export class DataService {
 
   private async loadFromFile(): Promise<PortfolioData> {
     const rawData = await readDataWithRetry(DATA_FILE, { maxRetries: 3, initialDelay: 100 })
-    const data = JSON.parse(rawData) as PortfolioData
+    const data = this.normalizeData(JSON.parse(rawData) as PortfolioData)
 
     if (!data.metadata || !data.hero || !data.about) {
       throw new Error('Invalid portfolio data structure')
@@ -175,10 +191,7 @@ export class DataService {
     return data
   }
 
-  private async saveToFile(
-    data: PortfolioData,
-    createBackup: boolean
-  ): Promise<void> {
+  private async saveToFile(data: PortfolioData, createBackup: boolean): Promise<void> {
     const jsonData = JSON.stringify(data, null, 2)
     await writeDataAtomic(DATA_FILE, jsonData, {
       createBackup,
@@ -202,7 +215,7 @@ export class DataService {
       return await this.loadFromFile()
     } catch (error) {
       throw new Error(
-        `Failed to load portfolio data: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to load portfolio data: ${error instanceof Error ? error.message : 'Unknown error'}`,
       )
     }
   }
@@ -213,9 +226,10 @@ export class DataService {
    */
   async saveData(
     data: PortfolioData,
-    options: { createBackup?: boolean; updateMetadata?: boolean } = {}
+    options: { createBackup?: boolean; updateMetadata?: boolean } = {},
   ): Promise<void> {
     const { createBackup = true, updateMetadata = true } = options
+    data = this.normalizeData(data)
 
     try {
       if (updateMetadata) {
@@ -234,7 +248,7 @@ export class DataService {
       }
     } catch (error) {
       throw new Error(
-        `Failed to save portfolio data: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to save portfolio data: ${error instanceof Error ? error.message : 'Unknown error'}`,
       )
     }
   }
@@ -244,7 +258,7 @@ export class DataService {
    */
   async updateSection<K extends keyof Omit<PortfolioData, 'metadata'>>(
     section: K,
-    sectionData: PortfolioData[K]
+    sectionData: PortfolioData[K],
   ): Promise<void> {
     const data = await this.loadData()
     data[section] = sectionData
@@ -273,7 +287,7 @@ export class DataService {
       await restoreFromBackup(backupPath, DATA_FILE)
     } catch (error) {
       throw new Error(
-        `Failed to restore from backup: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to restore from backup: ${error instanceof Error ? error.message : 'Unknown error'}`,
       )
     }
   }
@@ -290,7 +304,14 @@ export class DataService {
 
   private validateData(data: PortfolioData): void {
     const requiredProps: (keyof PortfolioData)[] = [
-      'hero', 'about', 'skills', 'projects', 'experience', 'contact', 'metadata',
+      'hero',
+      'about',
+      'skills',
+      'projects',
+      'certificates',
+      'experience',
+      'contact',
+      'metadata',
     ]
 
     for (const prop of requiredProps) {
@@ -304,9 +325,17 @@ export class DataService {
     }
     if (!Array.isArray(data.skills)) throw new Error('Skills must be an array')
     if (!Array.isArray(data.projects)) throw new Error('Projects must be an array')
+    if (!Array.isArray(data.certificates)) throw new Error('Certificates must be an array')
     if (!Array.isArray(data.experience)) throw new Error('Experience must be an array')
     if (!data.contact.email) throw new Error('Contact section must have an email')
     if (!data.metadata.version) throw new Error('Metadata must have a version')
+  }
+
+  private normalizeData(data: PortfolioData): PortfolioData {
+    return {
+      ...data,
+      certificates: Array.isArray(data.certificates) ? data.certificates : [],
+    }
   }
 }
 

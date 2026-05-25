@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
-const props = defineProps<{
+defineProps<{
   isCollapsed?: boolean
 }>()
 
@@ -13,32 +12,28 @@ const emit = defineEmits<{
 const route = useRoute()
 
 const navItems = [
-  { path: '/admin', label: 'Dashboard', icon: '🏠', exact: true },
-  { path: '/admin/hero', label: 'Hero', icon: '✨', exact: false },
-  { path: '/admin/about', label: 'About', icon: '👤', exact: false },
-  { path: '/admin/skills', label: 'Skills', icon: '🛠️', exact: false },
-  { path: '/admin/projects', label: 'Projects', icon: '📁', exact: false },
-  { path: '/admin/experience', label: 'Experience', icon: '💼', exact: false },
-  { path: '/admin/contact', label: 'Contact', icon: '📬', exact: false },
+  { path: '/admin', label: 'Dashboard', icon: 'DB', exact: true },
+  { path: '/admin/hero', label: 'Hero', icon: 'HE', exact: false },
+  { path: '/admin/about', label: 'About', icon: 'AB', exact: false },
+  { path: '/admin/skills', label: 'Skills', icon: 'SK', exact: false },
+  { path: '/admin/projects', label: 'Projects', icon: 'PR', exact: false },
+  { path: '/admin/certificates', label: 'Certificates', icon: 'CR', exact: false },
+  { path: '/admin/experience', label: 'Experience', icon: 'EX', exact: false },
+  { path: '/admin/contact', label: 'Contact', icon: 'CO', exact: false },
 ]
 
 function isActive(item: { path: string; exact: boolean }): boolean {
-  if (item.exact) {
-    return route.path === item.path
-  }
-  return route.path.startsWith(item.path)
+  return item.exact ? route.path === item.path : route.path.startsWith(item.path)
 }
 </script>
 
 <template>
   <aside class="admin-sidebar" :class="{ 'admin-sidebar--collapsed': isCollapsed }">
-    <!-- Logo / Brand -->
     <div class="sidebar-brand">
-      <span class="sidebar-brand-icon">⚡</span>
+      <span class="sidebar-brand-icon">BF</span>
       <span v-if="!isCollapsed" class="sidebar-brand-text">Admin Panel</span>
     </div>
 
-    <!-- Navigation -->
     <nav class="sidebar-nav" aria-label="Admin navigation">
       <ul class="sidebar-nav-list" role="list">
         <li v-for="item in navItems" :key="item.path">
@@ -56,13 +51,12 @@ function isActive(item: { path: string; exact: boolean }): boolean {
       </ul>
     </nav>
 
-    <!-- Collapse toggle -->
     <button
       class="sidebar-toggle"
       :aria-label="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
       @click="emit('toggle-collapse')"
     >
-      <span aria-hidden="true">{{ isCollapsed ? '→' : '←' }}</span>
+      <span aria-hidden="true">{{ isCollapsed ? '>' : '<' }}</span>
     </button>
   </aside>
 </template>
@@ -83,7 +77,6 @@ function isActive(item: { path: string; exact: boolean }): boolean {
   width: var(--sidebar-width-collapsed, 64px);
 }
 
-/* Brand */
 .sidebar-brand {
   display: flex;
   align-items: center;
@@ -95,21 +88,27 @@ function isActive(item: { path: string; exact: boolean }): boolean {
   min-height: var(--header-height, 64px);
 }
 
-.sidebar-brand-icon {
-  font-size: 1.5rem;
+.sidebar-brand-icon,
+.sidebar-nav-icon {
+  display: inline-grid;
+  place-items: center;
   flex-shrink: 0;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 8px;
+  color: #e0f2fe;
+  font-size: 0.7rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(16, 185, 129, 0.16));
+  border: 1px solid rgba(125, 211, 252, 0.28);
 }
 
 .sidebar-brand-text {
   font-size: var(--font-size-base, 1rem);
   font-weight: var(--font-weight-bold, 700);
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--color-text);
 }
 
-/* Nav */
 .sidebar-nav {
   flex: 1;
   padding: 1rem 0;
@@ -137,32 +136,19 @@ function isActive(item: { path: string; exact: boolean }): boolean {
   text-decoration: none;
   white-space: nowrap;
   overflow: hidden;
-  transition:
-    background-color var(--transition-base, 0.2s ease),
-    color var(--transition-base, 0.2s ease);
-  min-height: 2.5rem; /* touch-friendly */
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  min-height: 2.5rem;
 }
 
 .sidebar-nav-link:hover {
-  background-color: rgba(168, 85, 247, 0.1);
+  background-color: rgba(56, 189, 248, 0.1);
   color: var(--color-text);
-}
-
-.sidebar-nav-link:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: -2px;
+  transform: translateX(2px);
 }
 
 .sidebar-nav-link--active {
-  background-color: rgba(168, 85, 247, 0.15);
-  color: var(--color-primary);
-}
-
-.sidebar-nav-icon {
-  font-size: 1.1rem;
-  flex-shrink: 0;
-  width: 1.5rem;
-  text-align: center;
+  background-color: rgba(56, 189, 248, 0.14);
+  color: #bae6fd;
 }
 
 .sidebar-nav-label {
@@ -170,7 +156,6 @@ function isActive(item: { path: string; exact: boolean }): boolean {
   text-overflow: ellipsis;
 }
 
-/* Toggle button */
 .sidebar-toggle {
   display: flex;
   align-items: center;
@@ -183,23 +168,15 @@ function isActive(item: { path: string; exact: boolean }): boolean {
   font-size: var(--font-size-sm, 0.875rem);
   cursor: pointer;
   border: 1px solid var(--color-border);
-  transition:
-    background-color var(--transition-base, 0.2s ease),
-    color var(--transition-base, 0.2s ease);
+  transition: background-color 0.2s ease, color 0.2s ease;
   min-height: 2.5rem;
 }
 
 .sidebar-toggle:hover {
-  background-color: rgba(168, 85, 247, 0.1);
+  background-color: rgba(56, 189, 248, 0.1);
   color: var(--color-text);
 }
 
-.sidebar-toggle:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
-
-/* Tablet: auto-collapse */
 @media (max-width: 900px) {
   .admin-sidebar {
     width: var(--sidebar-width-collapsed, 64px);
@@ -211,7 +188,6 @@ function isActive(item: { path: string; exact: boolean }): boolean {
   }
 }
 
-/* Mobile: hide toggle button (hamburger in header handles open/close) */
 @media (max-width: 600px) {
   .sidebar-toggle {
     display: none;

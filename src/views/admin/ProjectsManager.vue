@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, inject, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, inject, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import { useContentStore } from '@/stores/content'
 import { useUiStore } from '@/stores/ui'
@@ -9,6 +9,8 @@ import TextInput from '@/components/admin/forms/TextInput.vue'
 import TextArea from '@/components/admin/forms/TextArea.vue'
 import ArrayInput from '@/components/admin/forms/ArrayInput.vue'
 import ImageUpload from '@/components/admin/forms/ImageUpload.vue'
+import AdminSectionPreview from '@/components/admin/AdminSectionPreview.vue'
+import ProjectsSection from '@/components/ProjectsSection.vue'
 import type { Project } from '@/types'
 import { projectSchema, getValidationErrors } from '@/types/schemas'
 
@@ -34,6 +36,7 @@ const editingProject = ref<Project | null>(null)
 
 /** Pending image file selected by the user (not yet uploaded) */
 const pendingImageFile = ref<File | null>(null)
+const pendingImagePreview = ref<string>('')
 
 /** Snapshot of the form data at last save/load (for dirty detection) */
 const savedSnapshot = ref<Omit<Project, 'id' | 'order'> | null>(null)
@@ -50,7 +53,7 @@ const isSaving = ref<boolean>(false)
 /** Form data for create / edit */
 const form = reactive<{
   title: string
-  category: string
+  categories: string[]
   description: string
   features: string[]
   image: string
@@ -59,7 +62,7 @@ const form = reactive<{
   featured: boolean
 }>({
   title: '',
-  category: '',
+  categories: [],
   description: '',
   features: [],
   image: '',
@@ -85,7 +88,7 @@ const isDirty = computed<boolean>(() => {
   const snap = savedSnapshot.value
   return (
     form.title !== snap.title ||
-    form.category !== snap.category ||
+    JSON.stringify(form.categories) !== JSON.stringify(projectCategories(snap)) ||
     form.description !== snap.description ||
     form.link !== snap.link ||
     form.githubLink !== (snap.githubLink ?? '') ||
@@ -101,10 +104,48 @@ const hasErrors = computed<boolean>(() => Object.keys(validationErrors).length >
 /** Save button is disabled while saving or when there are validation errors */
 const isSaveDisabled = computed<boolean>(() => isSaving.value || hasErrors.value)
 
+const previewProjects = computed<Project[]>(() => {
+  const current = [...localProjects.value]
+  if (!isFormOpen.value) return current
+  const categories = normalizedFormCategories()
+
+  const draft: Project = {
+    id: editingProject.value?.id ?? 'draft-project',
+    title: form.title || 'New Project',
+    category: primaryCategory(categories) || 'Project Category',
+    categories: categories.length ? categories : ['Project Category'],
+    description: form.description || 'Project description will appear here.',
+    features: form.features.length ? form.features : ['Feature preview'],
+    image: pendingImagePreview.value || form.image,
+    link: form.link || '#',
+    githubLink: form.githubLink || undefined,
+    featured: form.featured,
+    order: editingProject.value?.order ?? current.length,
+  }
+
+  if (editingProject.value) {
+    const index = current.findIndex((project) => project.id === editingProject.value?.id)
+    if (index >= 0) current[index] = draft
+    return current
+  }
+
+  return [...current, draft]
+})
+
 // ─── Sync dirty state with AdminDashboard ─────────────────────────────────────
 
 watch(isDirty, (value) => {
   setUnsavedChanges?.(value)
+})
+
+watch(pendingImageFile, (file) => {
+  if (pendingImagePreview.value) {
+    URL.revokeObjectURL(pendingImagePreview.value)
+    pendingImagePreview.value = ''
+  }
+  if (file) {
+    pendingImagePreview.value = URL.createObjectURL(file)
+  }
 })
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
@@ -134,7 +175,7 @@ function openCreateForm(): void {
   pendingImageFile.value = null
   Object.assign(form, {
     title: '',
-    category: '',
+    categories: [],
     description: '',
     features: [],
     image: '',
@@ -150,9 +191,10 @@ function openCreateForm(): void {
 function openEditForm(project: Project): void {
   isCreating.value = false
   pendingImageFile.value = null
+  const categories = projectCategories(project)
   Object.assign(form, {
     title: project.title,
-    category: project.category,
+    categories,
     description: project.description,
     features: [...project.features],
     image: project.image,
@@ -163,6 +205,7 @@ function openEditForm(project: Project): void {
   savedSnapshot.value = {
     title: project.title,
     category: project.category,
+    categories,
     description: project.description,
     features: [...project.features],
     image: project.image,
@@ -181,7 +224,7 @@ function closeForm(): void {
   savedSnapshot.value = null
   Object.assign(form, {
     title: '',
-    category: '',
+    categories: [],
     description: '',
     features: [],
     image: '',
@@ -196,13 +239,15 @@ function closeForm(): void {
 // ─── Validation ───────────────────────────────────────────────────────────────
 
 function buildValidationPayload() {
+  const categories = normalizedFormCategories()
   return {
     id: editingProject.value?.id ?? 'temp-id',
     title: form.title,
-    category: form.category,
+    category: primaryCategory(categories),
+    categories,
     description: form.description,
     features: form.features,
-    image: form.image || 'https://placeholder.com/image.jpg',
+    image: pendingImageFile.value ? 'https://placeholder.com/image.jpg' : form.image,
     link: form.link,
     githubLink: form.githubLink || undefined,
     featured: form.featured,
@@ -248,6 +293,26 @@ function validateSingleField(field: string): void {
 
 // ─── Image handling ───────────────────────────────────────────────────────────
 
+function projectCategories(project: Pick<Project, 'category' | 'categories'>): string[] {
+  return project.categories?.length
+    ? [...project.categories]
+    : project.category
+      ? [project.category]
+      : []
+}
+
+function normalizedFormCategories(): string[] {
+  return form.categories.map((category) => category.trim()).filter(Boolean)
+}
+
+function primaryCategory(categories: string[] = normalizedFormCategories()): string {
+  return categories[0] ?? ''
+}
+
+function categoryLabel(project: Pick<Project, 'category' | 'categories'>): string {
+  return projectCategories(project).join(', ')
+}
+
 function handleImageUpload(file: File): void {
   pendingImageFile.value = file
   delete validationErrors['image']
@@ -281,11 +346,7 @@ async function uploadPendingImage(category: string = 'projects'): Promise<string
 
   let uploadResponse
   if (oldFilename) {
-    uploadResponse = await imageService.replaceImage(
-      oldFilename,
-      pendingImageFile.value,
-      category
-    )
+    uploadResponse = await imageService.replaceImage(oldFilename, pendingImageFile.value, category)
   } else {
     uploadResponse = await imageService.uploadImage(pendingImageFile.value, category)
   }
@@ -293,7 +354,7 @@ async function uploadPendingImage(category: string = 'projects'): Promise<string
   if (!uploadResponse.success || !uploadResponse.data) {
     uiStore.showNotification(
       'error',
-      uploadResponse.error ?? 'Image upload failed. Please try again.'
+      uploadResponse.error ?? 'Image upload failed. Please try again.',
     )
     return null
   }
@@ -323,7 +384,8 @@ async function handleCreate(): Promise<void> {
 
     const created = await contentStore.createProject({
       title: form.title.trim(),
-      category: form.category.trim(),
+      category: primaryCategory(),
+      categories: normalizedFormCategories(),
       description: form.description.trim(),
       features: form.features,
       image: form.image,
@@ -366,7 +428,8 @@ async function handleUpdate(): Promise<void> {
     const updated: Project = {
       ...editingProject.value,
       title: form.title.trim(),
-      category: form.category.trim(),
+      category: primaryCategory(),
+      categories: normalizedFormCategories(),
       description: form.description.trim(),
       features: form.features,
       image: form.image,
@@ -382,6 +445,7 @@ async function handleUpdate(): Promise<void> {
       savedSnapshot.value = {
         title: updated.title,
         category: updated.category,
+        categories: projectCategories(updated),
         description: updated.description,
         features: [...updated.features],
         image: updated.image,
@@ -454,7 +518,7 @@ function handleCancel(): void {
     // Restore form to saved state
     Object.assign(form, {
       title: savedSnapshot.value.title,
-      category: savedSnapshot.value.category,
+      categories: projectCategories(savedSnapshot.value),
       description: savedSnapshot.value.description,
       features: [...savedSnapshot.value.features],
       image: savedSnapshot.value.image,
@@ -476,6 +540,12 @@ onBeforeRouteLeave(() => {
     return window.confirm('You have unsaved changes. Are you sure you want to leave?')
   }
 })
+
+onBeforeUnmount(() => {
+  if (pendingImagePreview.value) {
+    URL.revokeObjectURL(pendingImagePreview.value)
+  }
+})
 </script>
 
 <template>
@@ -487,11 +557,7 @@ onBeforeRouteLeave(() => {
         <p class="page-subtitle">Add, edit, or remove your portfolio projects.</p>
       </div>
 
-      <button
-        class="btn btn-primary"
-        :disabled="isLoading || isFormOpen"
-        @click="openCreateForm"
-      >
+      <button class="btn btn-primary" :disabled="isLoading || isFormOpen" @click="openCreateForm">
         <span aria-hidden="true">＋</span> Create New Project
       </button>
     </div>
@@ -502,201 +568,234 @@ onBeforeRouteLeave(() => {
       <span>Loading projects…</span>
     </div>
 
-    <!-- ── Create / Edit form ─────────────────────────────────────────────── -->
-    <Transition name="slide-down">
-      <section v-if="isFormOpen" class="project-form-card" aria-label="Project form">
-        <h2 class="form-title">{{ isCreating ? 'Create New Project' : 'Edit Project' }}</h2>
+    <div class="manager-workspace">
+      <div class="manager-fields">
+        <!-- ── Create / Edit form ─────────────────────────────────────────────── -->
+        <Transition name="slide-down">
+          <section v-if="isFormOpen" class="project-form-card" aria-label="Project form">
+            <h2 class="form-title">{{ isCreating ? 'Create New Project' : 'Edit Project' }}</h2>
 
-        <!-- Project image -->
-        <div class="form-section">
-          <h3 class="section-label">Project Image</h3>
-          <ImageUpload
-            :current-image="form.image"
-            :max-size="5"
-            @upload="handleImageUpload"
-            @remove="handleImageRemove"
-          />
-          <p v-if="validationErrors['image']" class="field-error" role="alert">
-            {{ validationErrors['image'] }}
+            <!-- Project image -->
+            <div class="form-section">
+              <h3 class="section-label">Project Image</h3>
+              <ImageUpload
+                :current-image="form.image"
+                :max-size="5"
+                @upload="handleImageUpload"
+                @remove="handleImageRemove"
+              />
+              <p v-if="validationErrors['image']" class="field-error" role="alert">
+                {{ validationErrors['image'] }}
+              </p>
+            </div>
+
+            <!-- Core fields -->
+            <div class="form-grid">
+              <TextInput
+                v-model="form.title"
+                label="Title"
+                placeholder="e.g. Portfolio Website"
+                required
+                :error="validationErrors['title']"
+                @blur="validateSingleField('title')"
+              />
+
+              <TextInput
+                v-model="form.link"
+                label="Project Link"
+                placeholder="https://example.com"
+                required
+                :error="validationErrors['link']"
+                @blur="validateSingleField('link')"
+              />
+
+              <TextInput
+                v-model="form.githubLink"
+                label="GitHub Link"
+                placeholder="https://github.com/user/repo"
+                :error="validationErrors['githubLink']"
+                @blur="validateSingleField('githubLink')"
+              />
+            </div>
+
+            <!-- Categories -->
+            <ArrayInput
+              v-model="form.categories"
+              label="Categories"
+              placeholder="Add a category..."
+              add-button-text="Add Category"
+            />
+            <p
+              v-if="
+                validationErrors['categories'] ||
+                validationErrors['categories.0'] ||
+                validationErrors['category']
+              "
+              class="field-error"
+              role="alert"
+            >
+              {{
+                validationErrors['categories'] ||
+                validationErrors['categories.0'] ||
+                validationErrors['category']
+              }}
+            </p>
+
+            <!-- Description -->
+            <TextArea
+              v-model="form.description"
+              label="Description"
+              placeholder="Describe the project in detail…"
+              :rows="4"
+              required
+              :error="validationErrors['description']"
+            />
+
+            <!-- Features -->
+            <ArrayInput
+              v-model="form.features"
+              label="Features"
+              placeholder="Add a feature…"
+              add-button-text="Add Feature"
+            />
+            <p v-if="validationErrors['features']" class="field-error" role="alert">
+              {{ validationErrors['features'] }}
+            </p>
+
+            <!-- Featured toggle -->
+            <label class="featured-toggle">
+              <input
+                v-model="form.featured"
+                type="checkbox"
+                class="featured-checkbox"
+                aria-label="Mark as featured project"
+              />
+              <span class="featured-label">Featured project</span>
+              <span class="featured-hint">Featured projects are highlighted on the portfolio.</span>
+            </label>
+
+            <!-- Form actions -->
+            <div class="form-actions">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                :disabled="isSaving"
+                @click="handleCancel"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-primary"
+                :disabled="isSaveDisabled"
+                :aria-busy="isSaving"
+                @click="isCreating ? handleCreate() : handleUpdate()"
+              >
+                <span v-if="isSaving" class="spinner spinner--sm" aria-hidden="true" />
+                {{ isSaving ? 'Saving…' : isCreating ? 'Create Project' : 'Save Changes' }}
+              </button>
+            </div>
+
+            <!-- Dirty indicator -->
+            <p v-if="isDirty && !isSaving" class="dirty-indicator" role="status" aria-live="polite">
+              You have unsaved changes.
+            </p>
+          </section>
+        </Transition>
+
+        <!-- ── Projects list ──────────────────────────────────────────────────── -->
+        <section v-if="localProjects.length > 0" class="projects-list" aria-label="Projects list">
+          <ul class="project-rows" role="list">
+            <li
+              v-for="project in localProjects"
+              :key="project.id"
+              class="project-row"
+              :class="{ 'project-row--featured': project.featured }"
+              :aria-label="`${project.title} - ${categoryLabel(project)}`"
+            >
+              <!-- Thumbnail -->
+              <div class="project-thumbnail" aria-hidden="true">
+                <img
+                  v-if="project.image"
+                  :src="project.image"
+                  :alt="project.title"
+                  class="thumbnail-img"
+                />
+                <span v-else class="thumbnail-placeholder">🖼</span>
+              </div>
+
+              <!-- Info -->
+              <div class="project-info">
+                <div class="project-title-row">
+                  <span class="project-name">{{ project.title }}</span>
+                  <span v-if="project.featured" class="featured-badge" aria-label="Featured"
+                    >★ Featured</span
+                  >
+                </div>
+                <div class="project-categories">
+                  <span
+                    v-for="category in projectCategories(project)"
+                    :key="category"
+                    class="project-category"
+                  >
+                    {{ category }}
+                  </span>
+                </div>
+                <p class="project-description">{{ project.description }}</p>
+              </div>
+
+              <!-- Actions -->
+              <div class="project-actions">
+                <button
+                  type="button"
+                  class="btn btn-icon btn-edit"
+                  :disabled="isLoading"
+                  :aria-label="`Edit ${project.title}`"
+                  @click="openEditForm(project)"
+                >
+                  ✏️
+                </button>
+
+                <button
+                  type="button"
+                  class="btn btn-icon btn-delete"
+                  :disabled="isLoading"
+                  :aria-label="`Delete ${project.title}`"
+                  @click="requestDelete(project)"
+                >
+                  🗑️
+                </button>
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <!-- ── Empty state ────────────────────────────────────────────────────── -->
+        <div v-else-if="!isLoading && !isFormOpen" class="empty-state" role="status">
+          <p class="empty-state__message">
+            No projects yet. Click <strong>Create New Project</strong> to add one.
           </p>
         </div>
+      </div>
 
-        <!-- Core fields -->
-        <div class="form-grid">
-          <TextInput
-            v-model="form.title"
-            label="Title"
-            placeholder="e.g. Portfolio Website"
-            required
-            :error="validationErrors['title']"
-            @blur="validateSingleField('title')"
-          />
-
-          <TextInput
-            v-model="form.category"
-            label="Category"
-            placeholder="e.g. Web App, Mobile, API"
-            required
-            :error="validationErrors['category']"
-            @blur="validateSingleField('category')"
-          />
-
-          <TextInput
-            v-model="form.link"
-            label="Project Link"
-            placeholder="https://example.com"
-            required
-            :error="validationErrors['link']"
-            @blur="validateSingleField('link')"
-          />
-
-          <TextInput
-            v-model="form.githubLink"
-            label="GitHub Link"
-            placeholder="https://github.com/user/repo"
-            :error="validationErrors['githubLink']"
-            @blur="validateSingleField('githubLink')"
-          />
-        </div>
-
-        <!-- Description -->
-        <TextArea
-          v-model="form.description"
-          label="Description"
-          placeholder="Describe the project in detail…"
-          :rows="4"
-          required
-          :error="validationErrors['description']"
-        />
-
-        <!-- Features -->
-        <ArrayInput
-          v-model="form.features"
-          label="Features"
-          placeholder="Add a feature…"
-          add-button-text="Add Feature"
-        />
-        <p v-if="validationErrors['features']" class="field-error" role="alert">
-          {{ validationErrors['features'] }}
-        </p>
-
-        <!-- Featured toggle -->
-        <label class="featured-toggle">
-          <input
-            v-model="form.featured"
-            type="checkbox"
-            class="featured-checkbox"
-            aria-label="Mark as featured project"
-          />
-          <span class="featured-label">Featured project</span>
-          <span class="featured-hint">Featured projects are highlighted on the portfolio.</span>
-        </label>
-
-        <!-- Form actions -->
-        <div class="form-actions">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            :disabled="isSaving"
-            @click="handleCancel"
-          >
-            Cancel
-          </button>
-
-          <button
-            type="button"
-            class="btn btn-primary"
-            :disabled="isSaveDisabled"
-            :aria-busy="isSaving"
-            @click="isCreating ? handleCreate() : handleUpdate()"
-          >
-            <span v-if="isSaving" class="spinner spinner--sm" aria-hidden="true" />
-            {{ isSaving ? 'Saving…' : isCreating ? 'Create Project' : 'Save Changes' }}
-          </button>
-        </div>
-
-        <!-- Dirty indicator -->
-        <p v-if="isDirty && !isSaving" class="dirty-indicator" role="status" aria-live="polite">
-          You have unsaved changes.
-        </p>
-      </section>
-    </Transition>
-
-    <!-- ── Projects list ──────────────────────────────────────────────────── -->
-    <section v-if="localProjects.length > 0" class="projects-list" aria-label="Projects list">
-      <ul class="project-rows" role="list">
-        <li
-          v-for="project in localProjects"
-          :key="project.id"
-          class="project-row"
-          :class="{ 'project-row--featured': project.featured }"
-          :aria-label="`${project.title} – ${project.category}`"
-        >
-          <!-- Thumbnail -->
-          <div class="project-thumbnail" aria-hidden="true">
-            <img
-              v-if="project.image"
-              :src="project.image"
-              :alt="project.title"
-              class="thumbnail-img"
-            />
-            <span v-else class="thumbnail-placeholder">🖼</span>
-          </div>
-
-          <!-- Info -->
-          <div class="project-info">
-            <div class="project-title-row">
-              <span class="project-name">{{ project.title }}</span>
-              <span v-if="project.featured" class="featured-badge" aria-label="Featured">★ Featured</span>
-            </div>
-            <span class="project-category">{{ project.category }}</span>
-            <p class="project-description">{{ project.description }}</p>
-          </div>
-
-          <!-- Actions -->
-          <div class="project-actions">
-            <button
-              type="button"
-              class="btn btn-icon btn-edit"
-              :disabled="isLoading"
-              :aria-label="`Edit ${project.title}`"
-              @click="openEditForm(project)"
-            >
-              ✏️
-            </button>
-
-            <button
-              type="button"
-              class="btn btn-icon btn-delete"
-              :disabled="isLoading"
-              :aria-label="`Delete ${project.title}`"
-              @click="requestDelete(project)"
-            >
-              🗑️
-            </button>
-          </div>
-        </li>
-      </ul>
-    </section>
-
-    <!-- ── Empty state ────────────────────────────────────────────────────── -->
-    <div
-      v-else-if="!isLoading && !isFormOpen"
-      class="empty-state"
-      role="status"
-    >
-      <p class="empty-state__message">
-        No projects yet. Click <strong>Create New Project</strong> to add one.
-      </p>
+      <AdminSectionPreview
+        title="Projects section"
+        subtitle="Project yang sedang kamu edit akan muncul langsung sebagai kartu portfolio."
+      >
+        <ProjectsSection :projects="previewProjects" />
+      </AdminSectionPreview>
     </div>
 
     <!-- ── Delete confirmation dialog ────────────────────────────────────── -->
     <ConfirmDialog
       :is-open="isDeleteDialogOpen"
       title="Delete Project"
-      :message="projectToDelete
-        ? `Are you sure you want to delete &quot;${projectToDelete.title}&quot;? This will also remove the associated image. This action cannot be undone.`
-        : ''"
+      :message="
+        projectToDelete
+          ? `Are you sure you want to delete &quot;${projectToDelete.title}&quot;? This will also remove the associated image. This action cannot be undone.`
+          : ''
+      "
       confirm-text="Delete"
       cancel-text="Cancel"
       @confirm="confirmDelete"
@@ -711,7 +810,20 @@ onBeforeRouteLeave(() => {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  max-width: 900px;
+  max-width: none;
+}
+
+.manager-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(min(560px, 100%), 1.1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.manager-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 /* ── Page header ─────────────────────────────────────────────────────────── */
@@ -834,7 +946,9 @@ onBeforeRouteLeave(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Project form card ───────────────────────────────────────────────────── */
@@ -1020,9 +1134,22 @@ onBeforeRouteLeave(() => {
   white-space: nowrap;
 }
 
+.project-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
 .project-category {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid rgba(168, 85, 247, 0.28);
+  border-radius: 999px;
+  background: rgba(168, 85, 247, 0.08);
+  padding: 0.12rem 0.5rem;
   font-size: 0.8rem;
-  color: var(--color-text-secondary);
+  color: var(--color-primary, #a855f7);
+  font-weight: 600;
 }
 
 .project-description {
@@ -1076,6 +1203,12 @@ onBeforeRouteLeave(() => {
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .manager-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .page-header {
     flex-direction: column;

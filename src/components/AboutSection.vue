@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { AboutContent } from '@/types'
 import ava from '@/assets/ava.png'
 
@@ -23,7 +23,17 @@ const displayParagraphs = computed(() =>
 const displaySkills = computed(() =>
   props.about?.skills && props.about.skills.length > 0 ? props.about.skills : fallbackSkills
 )
-const displayImage = computed(() => props.about?.aboutImage ?? ava)
+const imageFailed = ref(false)
+const displayImage = computed(() =>
+  props.about?.aboutImage && !imageFailed.value ? props.about.aboutImage : ava
+)
+
+watch(
+  () => props.about?.aboutImage,
+  () => {
+    imageFailed.value = false
+  }
+)
 </script>
 
 <template>
@@ -33,7 +43,7 @@ const displayImage = computed(() => props.about?.aboutImage ?? ava)
       <div class="about-content">
         <div class="about-image">
           <div class="ava">
-            <img :src="displayImage" alt="About" class="ava-img" />
+            <img :src="displayImage" alt="About" class="ava-img" @error="imageFailed = true" />
           </div>
         </div>
         <div class="about-text">

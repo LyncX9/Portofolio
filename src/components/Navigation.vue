@@ -39,6 +39,7 @@ const navigateTo = (path: string) => {
         <li><a href="#about" @click.prevent="scrollToSection('about')">About</a></li>
         <li><a href="#experience" @click.prevent="scrollToSection('experience')">Experience</a></li>
         <li><a href="#projects" @click.prevent="scrollToSection('projects')">Projects</a></li>
+        <li><a href="#certificates" @click.prevent="scrollToSection('certificates')">Certificates</a></li>
         <li><a href="#contact" @click.prevent="scrollToSection('contact')">Contact</a></li>
       </ul>
     </div>
@@ -52,9 +53,9 @@ const navigateTo = (path: string) => {
   left: 0;
   right: 0;
   z-index: 1000;
-  background: rgba(15, 15, 30, 0.8);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--color-border);
+  background: rgba(7, 10, 18, 0.78);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
   padding: 1rem 2rem;
 }
 
@@ -105,19 +106,40 @@ const navigateTo = (path: string) => {
 .nav-menu {
   display: flex;
   list-style: none;
-  gap: 2rem;
+  gap: clamp(0.9rem, 2vw, 1.6rem);
   margin: 0;
   padding: 0;
 }
 
 .nav-menu li a {
+  position: relative;
   color: var(--color-text-secondary);
+  font-size: 0.94rem;
   font-weight: 500;
-  transition: color 0.3s ease;
+  transition: color 0.25s ease;
+  white-space: nowrap;
+}
+
+.nav-menu li a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.45rem;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #38bdf8, #10b981);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s ease;
 }
 
 .nav-menu li a:hover {
-  color: var(--color-primary);
+  color: #e0f2fe;
+}
+
+.nav-menu li a:hover::after {
+  transform: scaleX(1);
 }
 
 .menu-toggle {

@@ -1,5 +1,13 @@
 import type { ImageUploadResponse, ApiResponse } from '@/types'
-import { apiDelete, API_ENDPOINTS, API_BASE_URL } from '@/utils/api'
+import {
+  apiDelete,
+  API_ENDPOINTS,
+  getCsrfToken,
+  handleAuthExpired,
+  isAuthExpiredResponse,
+  isCsrfErrorResponse,
+  refreshCsrfToken
+} from '@/utils/api'
 
 /**
  * Image Service
@@ -72,7 +80,8 @@ export function validateImageFile(
 export function uploadImage(
   file: File,
   category: string,
-  onProgress?: UploadProgressCallback
+  onProgress?: UploadProgressCallback,
+  hasRetried = false
 ): Promise<ApiResponse<ImageUploadResponse>> {
   // Client-side validation before hitting the network
   const validation = validateImageFile(file)
@@ -100,7 +109,7 @@ export function uploadImage(
       })
     }
 
-    xhr.addEventListener('load', () => {
+    xhr.addEventListener('load', async () => {
       try {
         const data = JSON.parse(xhr.responseText)
 
@@ -110,13 +119,32 @@ export function uploadImage(
             data: data.data || data,
             message: data.message
           })
-        } else {
+          return
+        }
+
+        if (isCsrfErrorResponse(xhr.status, data) && !hasRetried) {
+          const refreshed = await refreshCsrfToken()
+          if (refreshed) {
+            resolve(uploadImage(file, category, onProgress, true))
+            return
+          }
+        }
+
+        if (isAuthExpiredResponse(xhr.status, data)) {
+          handleAuthExpired()
           resolve({
             success: false,
-            error: data.error || data.message || `HTTP ${xhr.status}: ${xhr.statusText}`,
+            error: 'Session expired. Please login again.',
             message: data.message
           })
+          return
         }
+
+        resolve({
+          success: false,
+          error: data.error || data.message || `HTTP ${xhr.status}: ${xhr.statusText}`,
+          message: data.message
+        })
       } catch {
         resolve({
           success: false,
@@ -141,6 +169,10 @@ export function uploadImage(
 
     xhr.open('POST', API_ENDPOINTS.IMAGES_UPLOAD)
     xhr.withCredentials = true
+    const csrfToken = getCsrfToken()
+    if (csrfToken) {
+      xhr.setRequestHeader('x-csrf-token', csrfToken)
+    }
     xhr.send(formData)
   })
 }

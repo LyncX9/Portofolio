@@ -5,6 +5,7 @@ import type {
   AboutContent,
   Skill,
   Project,
+  Certificate,
   Experience,
   ContactContent,
   PortfolioData
@@ -23,6 +24,7 @@ export const useContentStore = defineStore('content', () => {
   const about = ref<AboutContent | null>(null)
   const skills = ref<Skill[]>([])
   const projects = ref<Project[]>([])
+  const certificates = ref<Certificate[]>([])
   const experience = ref<Experience[]>([])
   const contact = ref<ContactContent | null>(null)
   const lastUpdated = ref<string | null>(null)
@@ -37,6 +39,7 @@ export const useContentStore = defineStore('content', () => {
   const skillsList = computed<Skill[]>(() => [...skills.value].sort((a, b) => a.order - b.order))
   const projectsList = computed<Project[]>(() => [...projects.value].sort((a, b) => a.order - b.order))
   const featuredProjects = computed<Project[]>(() => projectsList.value.filter(p => p.featured))
+  const certificatesList = computed<Certificate[]>(() => [...certificates.value].sort((a, b) => a.order - b.order))
   const experienceList = computed<Experience[]>(() => [...experience.value].sort((a, b) => a.order - b.order))
   const contactContent = computed<ContactContent | null>(() => contact.value)
 
@@ -358,6 +361,92 @@ export const useContentStore = defineStore('content', () => {
 
   // ─── Experience ───────────────────────────────────────────────────────────
 
+  // Certificates
+
+  async function createCertificate(data: Omit<Certificate, 'id' | 'order'>): Promise<Certificate | null> {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const response = await contentService.createCertificate(data)
+
+      if (response.success && response.data) {
+        certificates.value.push(response.data)
+        return response.data
+      }
+      error.value = response.error || 'Failed to create certificate'
+      return null
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'An unexpected error occurred'
+      return null
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function updateCertificate(id: string, data: Certificate): Promise<boolean> {
+    const index = certificates.value.findIndex(c => c.id === id)
+    if (index === -1) {
+      error.value = `Certificate with id "${id}" not found`
+      return false
+    }
+
+    const previous: Certificate = { ...certificates.value[index] } as Certificate
+    certificates.value[index] = { ...data } as Certificate
+
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const response = await contentService.updateCertificate(id, data)
+
+      if (response.success && response.data) {
+        certificates.value[index] = response.data
+        return true
+      }
+      certificates.value[index] = previous
+      error.value = response.error || 'Failed to update certificate'
+      return false
+    } catch (err) {
+      certificates.value[index] = previous
+      error.value = err instanceof Error ? err.message : 'An unexpected error occurred'
+      return false
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function deleteCertificate(id: string): Promise<boolean> {
+    const index = certificates.value.findIndex(c => c.id === id)
+    if (index === -1) {
+      error.value = `Certificate with id "${id}" not found`
+      return false
+    }
+
+    const removed: Certificate = certificates.value[index]!
+    certificates.value.splice(index, 1)
+
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const response = await contentService.deleteCertificate(id)
+
+      if (response.success) {
+        return true
+      }
+      certificates.value.splice(index, 0, removed)
+      error.value = response.error || 'Failed to delete certificate'
+      return false
+    } catch (err) {
+      certificates.value.splice(index, 0, removed)
+      error.value = err instanceof Error ? err.message : 'An unexpected error occurred'
+      return false
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   /**
    * Create a new experience entry.
    */
@@ -533,6 +622,7 @@ export const useContentStore = defineStore('content', () => {
     about.value = null
     skills.value = []
     projects.value = []
+    certificates.value = []
     experience.value = []
     contact.value = null
     lastUpdated.value = null
@@ -547,6 +637,7 @@ export const useContentStore = defineStore('content', () => {
     about.value = data.about
     skills.value = data.skills
     projects.value = data.projects
+    certificates.value = data.certificates ?? []
     experience.value = data.experience
     contact.value = data.contact
     lastUpdated.value = data.metadata?.lastUpdated ?? null
@@ -560,6 +651,7 @@ export const useContentStore = defineStore('content', () => {
     about,
     skills,
     projects,
+    certificates,
     experience,
     contact,
     lastUpdated,
@@ -572,6 +664,7 @@ export const useContentStore = defineStore('content', () => {
     skillsList,
     projectsList,
     featuredProjects,
+    certificatesList,
     experienceList,
     contactContent,
     isContentLoaded,
@@ -594,6 +687,9 @@ export const useContentStore = defineStore('content', () => {
     createProject,
     updateProject,
     deleteProject,
+    createCertificate,
+    updateCertificate,
+    deleteCertificate,
 
     // Actions – experience
     createExperience,

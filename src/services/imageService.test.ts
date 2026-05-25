@@ -50,6 +50,7 @@ function createXhrMock() {
     status: 200,
     statusText: 'OK',
     withCredentials: false,
+    headers: {} as Record<string, string>,
     openArgs: null as [string, string] | null,
     sentBody: null as FormData | null,
 
@@ -59,6 +60,9 @@ function createXhrMock() {
     },
     open(method: string, url: string) {
       instance.openArgs = [method, url]
+    },
+    setRequestHeader(name: string, value: string) {
+      instance.headers[name.toLowerCase()] = value
     },
     send(body: FormData) {
       instance.sentBody = body
@@ -143,6 +147,9 @@ describe('uploadImage', () => {
   })
 
   afterEach(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.clear()
+    }
     vi.unstubAllGlobals()
   })
 
@@ -245,6 +252,29 @@ describe('uploadImage', () => {
     await promise
     expect(xhrMock.instance.withCredentials).toBe(true)
   })
+
+  it('sends the saved CSRF token with image uploads', async () => {
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: vi.fn((key: string) => (
+          key === 'portfolio_admin_csrf_token' ? 'test-csrf-token' : null
+        )),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+        clear: vi.fn()
+      }
+    })
+
+    const file = makeFile('photo.jpg', 'image/jpeg', 512)
+    const promise = uploadImage(file, 'projects')
+    xhrMock.instance._triggerLoad(200, {
+      success: true,
+      data: { filename: 'p.jpg', url: '/uploads/projects/p.jpg', size: 512 }
+    })
+    await promise
+
+    expect(xhrMock.instance.headers['x-csrf-token']).toBe('test-csrf-token')
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -253,6 +283,9 @@ describe('uploadImage', () => {
 
 describe('deleteImage', () => {
   afterEach(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.clear()
+    }
     vi.unstubAllGlobals()
   })
 

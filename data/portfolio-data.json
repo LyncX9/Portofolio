@@ -45,6 +45,18 @@
       "order": 1
     }
   ],
+  "certificates": [
+    {
+      "id": "1",
+      "title": "Certificate 1",
+      "issuer": "Course Provider",
+      "issuedAt": "2024",
+      "description": "A valid certificate description",
+      "image": "/images/certificate.jpg",
+      "credentialUrl": "https://certificate.example.com",
+      "order": 1
+    }
+  ],
   "experience": [
     {
       "id": "1",
@@ -71,7 +83,7 @@
     ]
   },
   "metadata": {
-    "lastUpdated": "2026-05-21T02:16:05.566Z",
+    "lastUpdated": "2026-05-25T23:01:06.854Z",
     "version": "1.0.0"
   }
 }

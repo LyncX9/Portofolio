@@ -6,6 +6,8 @@ import { useUiStore } from '@/stores/ui'
 import ConfirmDialog from '@/components/admin/ConfirmDialog.vue'
 import TextInput from '@/components/admin/forms/TextInput.vue'
 import ArrayInput from '@/components/admin/forms/ArrayInput.vue'
+import AdminSectionPreview from '@/components/admin/AdminSectionPreview.vue'
+import ExperienceSection from '@/components/ExperienceSection.vue'
 import type { Experience } from '@/types'
 
 // ─── Stores ───────────────────────────────────────────────────────────────────
@@ -65,6 +67,30 @@ const hasValidationErrors = computed(() => Object.keys(validationErrors.value).l
 
 /** Save button is disabled while loading or when there are validation errors */
 const isSaveDisabled = computed(() => isLoading.value || hasValidationErrors.value)
+
+const previewExperience = computed<Experience[]>(() => {
+  const current = [...localExperience.value]
+  if (!isFormOpen.value) return current
+
+  const draft: Experience = {
+    id: editingExperience.value?.id ?? 'draft-experience',
+    title: formData.value.title || 'New Experience',
+    company: formData.value.company || 'Company',
+    duration: formData.value.duration || 'Duration',
+    descriptions: formData.value.descriptions.length
+      ? formData.value.descriptions
+      : ['Experience detail will appear here.'],
+    order: editingExperience.value?.order ?? current.length,
+  }
+
+  if (editingExperience.value) {
+    const index = current.findIndex((entry) => entry.id === editingExperience.value?.id)
+    if (index >= 0) current[index] = draft
+    return current
+  }
+
+  return [...current, draft]
+})
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 
@@ -308,6 +334,8 @@ onBeforeRouteLeave(() => {
       <span>Loading experience entries…</span>
     </div>
 
+    <div class="manager-workspace">
+      <div class="manager-fields">
     <!-- ── Create / Edit form ─────────────────────────────────────────────── -->
     <Transition name="slide-down">
       <section v-if="isFormOpen" class="experience-form-card" aria-label="Experience form">
@@ -451,6 +479,15 @@ onBeforeRouteLeave(() => {
         No experience entries yet. Click <strong>Create New Experience</strong> to add one.
       </p>
     </div>
+      </div>
+
+      <AdminSectionPreview
+        title="Experience section"
+        subtitle="Preview timeline kerja ikut berubah saat kamu mengetik."
+      >
+        <ExperienceSection :experience="previewExperience" />
+      </AdminSectionPreview>
+    </div>
 
     <!-- ── Delete confirmation dialog ────────────────────────────────────── -->
     <ConfirmDialog
@@ -475,7 +512,20 @@ onBeforeRouteLeave(() => {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  max-width: 860px;
+  max-width: none;
+}
+
+.manager-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(min(560px, 100%), 1.1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.manager-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 /* ── Page header ─────────────────────────────────────────────────────────── */
@@ -774,6 +824,12 @@ onBeforeRouteLeave(() => {
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .manager-workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 600px) {
   .page-header {
     flex-direction: column;

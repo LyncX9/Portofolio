@@ -49,6 +49,18 @@ const mockPortfolioData: PortfolioData = {
       order: 1,
     },
   ],
+  certificates: [
+    {
+      id: '1',
+      title: 'Certificate 1',
+      issuer: 'Course Provider',
+      issuedAt: '2024',
+      description: 'A valid certificate description',
+      image: '/images/certificate.jpg',
+      credentialUrl: 'https://certificate.example.com',
+      order: 1,
+    },
+  ],
   experience: [
     {
       id: '1',
