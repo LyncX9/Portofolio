@@ -83,6 +83,28 @@ const DEFAULT_HEADERS = {
   'Content-Type': 'application/json'
 }
 
+type ParsedResponse = Record<string, unknown>
+
+async function parseApiResponse(response: Response): Promise<ParsedResponse> {
+  const legacyJson = (response as Response & { json?: () => Promise<ParsedResponse> }).json
+  if (typeof response.text !== 'function' && typeof legacyJson === 'function') {
+    return legacyJson.call(response)
+  }
+
+  const text = await response.text()
+  if (!text) return {}
+
+  try {
+    return JSON.parse(text) as ParsedResponse
+  } catch {
+    return {
+      success: false,
+      error: `API returned a non-JSON response (${response.status}). Check that the backend URL is correct and deployed.`,
+      message: text.slice(0, 160)
+    }
+  }
+}
+
 /**
  * Make an API request with error handling.
  * For state-changing methods (POST, PUT, DELETE, PATCH) the CSRF token is
@@ -128,8 +150,9 @@ export async function apiRequest<T>(
 
     const response = await fetch(url, requestInit)
 
-    // Parse response
-    const data = await response.json()
+    // Parse response. Production proxies can return plain text/HTML when the
+    // backend URL is wrong, so keep that failure readable for the admin UI.
+    const data = await parseApiResponse(response)
 
     // Handle HTTP errors
     if (!response.ok) {
@@ -145,21 +168,21 @@ export async function apiRequest<T>(
         return {
           success: false,
           error: 'Session expired. Please login again.',
-          message: data.message
+          message: typeof data.message === 'string' ? data.message : undefined
         }
       }
 
       return {
         success: false,
-        error: data.error || data.message || `HTTP ${response.status}: ${response.statusText}`,
-        message: data.message
+        error: String(data.error || data.message || `HTTP ${response.status}: ${response.statusText}`),
+        message: typeof data.message === 'string' ? data.message : undefined
       }
     }
 
     return {
       success: true,
-      data: data.data || data,
-      message: data.message
+      data: (data.data || data) as T,
+      message: typeof data.message === 'string' ? data.message : undefined
     }
   } catch (error) {
     return {
@@ -202,8 +225,8 @@ export async function refreshCsrfToken(): Promise<boolean> {
       headers: DEFAULT_HEADERS,
       credentials: 'include'
     })
-    const data = await response.json()
-    const session = data?.data
+    const data = await parseApiResponse(response)
+    const session = data?.data as { isAuthenticated?: boolean; csrfToken?: string } | undefined
 
     if (response.ok && session?.isAuthenticated && session?.csrfToken) {
       saveCsrfToken(session.csrfToken)
@@ -292,7 +315,7 @@ export async function apiUploadFile<T>(
       credentials: 'include'
     })
 
-    const data = await response.json()
+    const data = await parseApiResponse(response)
 
     if (!response.ok) {
       if (shouldRefreshCsrf(response.status, data, HttpMethod.POST, url) && !hasRetried) {
@@ -307,21 +330,21 @@ export async function apiUploadFile<T>(
         return {
           success: false,
           error: 'Session expired. Please login again.',
-          message: data.message
+          message: typeof data.message === 'string' ? data.message : undefined
         }
       }
 
       return {
         success: false,
-        error: data.error || data.message || `HTTP ${response.status}: ${response.statusText}`,
-        message: data.message
+        error: String(data.error || data.message || `HTTP ${response.status}: ${response.statusText}`),
+        message: typeof data.message === 'string' ? data.message : undefined
       }
     }
 
     return {
       success: true,
-      data: data.data || data,
-      message: data.message
+      data: (data.data || data) as T,
+      message: typeof data.message === 'string' ? data.message : undefined
     }
   } catch (error) {
     return {
