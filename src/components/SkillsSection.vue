@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { Skill } from '@/types'
 import { isImageUrl, resolveMediaUrl } from '@/utils/api'
 
@@ -18,9 +18,18 @@ const fallbackSkills: Skill[] = [
 const displaySkills = computed(() =>
   props.skills && props.skills.length > 0 ? props.skills : fallbackSkills
 )
+const failedIconIds = ref<Set<string>>(new Set())
+
+watch(
+  () => props.skills,
+  () => {
+    failedIconIds.value = new Set()
+  },
+  { deep: true }
+)
 
 function iconLabel(icon: string, name: string): string {
-  if (!icon || icon.includes('-')) {
+  if (!icon || icon.includes('-') || isImageUrl(icon)) {
     return name.slice(0, 2).toUpperCase()
   }
   return icon
@@ -28,6 +37,10 @@ function iconLabel(icon: string, name: string): string {
 
 function isImageIcon(icon: string): boolean {
   return isImageUrl(icon)
+}
+
+function markIconFailed(id: string): void {
+  failedIconIds.value = new Set([...failedIconIds.value, id])
 }
 </script>
 
@@ -48,10 +61,11 @@ function isImageIcon(icon: string): boolean {
         <div v-for="tech in displaySkills" :key="tech.id" class="tech-item" data-motion-card>
           <div class="tech-icon">
             <img
-              v-if="isImageIcon(tech.icon)"
+              v-if="isImageIcon(tech.icon) && !failedIconIds.has(tech.id)"
               :src="resolveMediaUrl(tech.icon)"
               :alt="`${tech.name} icon`"
               class="tech-icon-img"
+              @error="markIconFailed(tech.id)"
             />
             <span v-else>{{ iconLabel(tech.icon, tech.name) }}</span>
           </div>

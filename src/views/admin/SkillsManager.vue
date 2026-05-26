@@ -7,7 +7,6 @@ import TextInput from '@/components/admin/forms/TextInput.vue'
 import ImageUpload from '@/components/admin/forms/ImageUpload.vue'
 import AdminSectionPreview from '@/components/admin/AdminSectionPreview.vue'
 import SkillsSection from '@/components/SkillsSection.vue'
-import { imageService } from '@/services/imageService'
 import { isImageUrl, resolveMediaUrl } from '@/utils/api'
 import type { Skill } from '@/types'
 
@@ -49,6 +48,7 @@ const isDeleteDialogOpen = ref<boolean>(false)
 /** Drag-and-drop state */
 const draggedIndex = ref<number | null>(null)
 const dragOverIndex = ref<number | null>(null)
+const failedSkillIconIds = ref<Set<string>>(new Set())
 
 // ─── Computed ─────────────────────────────────────────────────────────────────
 
@@ -121,6 +121,7 @@ async function loadSkills(): Promise<void> {
 /** Sync local list from the store (sorted by order) */
 function syncLocalSkills(): void {
   localSkills.value = [...contentStore.skillsList]
+  failedSkillIconIds.value = new Set()
 }
 
 // ─── Form helpers ─────────────────────────────────────────────────────────────
@@ -199,31 +200,40 @@ function isImageIcon(icon: string): boolean {
   return isImageUrl(icon)
 }
 
-function extractFilename(url: string): string {
-  if (!url) return ''
-  try {
-    const parsed = new URL(url)
-    return parsed.pathname.split('/').pop() ?? ''
-  } catch {
-    return url.split('/').pop() ?? ''
+function iconLabel(skill: Skill): string {
+  if (!skill.icon || isImageIcon(skill.icon)) {
+    return skill.name.slice(0, 2).toUpperCase()
   }
+  return skill.icon
+}
+
+function markSkillIconFailed(id: string): void {
+  failedSkillIconIds.value = new Set([...failedSkillIconIds.value, id])
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result ?? ''))
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read icon file.'))
+    reader.readAsDataURL(file)
+  })
 }
 
 async function uploadPendingIcon(): Promise<string | null> {
   if (!pendingIconFile.value) return formData.value.icon
 
-  const oldFilename = isImageIcon(formData.value.icon) ? extractFilename(formData.value.icon) : ''
-  const uploadResponse = oldFilename
-    ? await imageService.replaceImage(oldFilename, pendingIconFile.value, 'skills')
-    : await imageService.uploadImage(pendingIconFile.value, 'skills')
-
-  if (!uploadResponse.success || !uploadResponse.data) {
-    uiStore.showNotification('error', uploadResponse.error ?? 'Skill icon upload failed.')
+  try {
+    const dataUrl = await readFileAsDataUrl(pendingIconFile.value)
+    pendingIconFile.value = null
+    return dataUrl
+  } catch (error) {
+    uiStore.showNotification(
+      'error',
+      error instanceof Error ? error.message : 'Skill icon upload failed.'
+    )
     return null
   }
-
-  pendingIconFile.value = null
-  return uploadResponse.data.url
 }
 
 // ─── CRUD handlers ────────────────────────────────────────────────────────────
@@ -484,12 +494,13 @@ function handleDragEnd(): void {
           <!-- Icon preview -->
           <span class="skill-icon" :title="skill.icon">
             <img
-              v-if="isImageIcon(skill.icon)"
+              v-if="isImageIcon(skill.icon) && !failedSkillIconIds.has(skill.id)"
               :src="resolveMediaUrl(skill.icon)"
               :alt="`${skill.name} icon`"
               class="skill-icon-img"
+              @error="markSkillIconFailed(skill.id)"
             />
-            <span v-else>{{ skill.icon }}</span>
+            <span v-else>{{ iconLabel(skill) }}</span>
           </span>
 
           <!-- Info -->
