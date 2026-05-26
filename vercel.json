@@ -9,6 +9,10 @@
       "destination": "https://portfolio-api-xgxz.onrender.com/api/$1"
     },
     {
+      "source": "/uploads/(.*)",
+      "destination": "https://portfolio-api-xgxz.onrender.com/uploads/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
