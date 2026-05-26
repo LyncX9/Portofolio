@@ -23,6 +23,22 @@ watch(
 
 <template>
   <section id="hero" class="hero">
+    <div class="hero-motion-rail" aria-hidden="true">
+      <div class="hero-motion-rail__track">
+        <span>Vue</span>
+        <span>TypeScript</span>
+        <span>GSAP Motion</span>
+        <span>Portfolio API</span>
+        <span>Admin CRUD</span>
+        <span>Responsive UI</span>
+        <span>Vue</span>
+        <span>TypeScript</span>
+        <span>GSAP Motion</span>
+        <span>Portfolio API</span>
+        <span>Admin CRUD</span>
+        <span>Responsive UI</span>
+      </div>
+    </div>
     <div class="hero-container">
       <div class="hero-content motion-hero-copy">
         <div class="hero-kicker">
@@ -136,6 +152,43 @@ watch(
   inset: 0;
   background: linear-gradient(90deg, rgba(56, 189, 248, 0.08), transparent 34%, rgba(236, 72, 153, 0.08));
   pointer-events: none;
+}
+
+.hero-motion-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2rem;
+  z-index: 1;
+  overflow: hidden;
+  border-block: 1px solid rgba(125, 211, 252, 0.14);
+  background: rgba(5, 9, 17, 0.42);
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  pointer-events: none;
+}
+
+.hero-motion-rail__track {
+  display: flex;
+  width: max-content;
+  gap: 0.9rem;
+  padding: 0.75rem 0;
+  will-change: transform;
+}
+
+.hero-motion-rail__track span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.15rem;
+  padding: 0 1rem;
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.14), rgba(168, 85, 247, 0.12)),
+    rgba(8, 13, 24, 0.76);
+  color: #e0f2fe;
+  font-size: 0.82rem;
+  font-weight: 800;
+  box-shadow: 0 14px 42px rgba(14, 165, 233, 0.12);
 }
 
 .hero-container {
@@ -415,7 +468,11 @@ watch(
 @media (max-width: 768px) {
   .hero {
     min-height: auto;
-    padding: 88px 1rem 2.5rem;
+    padding: 88px 1rem 6rem;
+  }
+
+  .hero-motion-rail {
+    bottom: 1.2rem;
   }
 
   .hero-container {

@@ -11,6 +11,7 @@ const interactiveSelector =
 
 let barbaReady = false
 let hoverCleanup: Array<() => void> = []
+let continuousMotionReady = false
 
 function prefersReducedMotion(): boolean {
   return (
@@ -149,6 +150,16 @@ export function animatePageIn(root: ParentNode = document): void {
     yoyo: true,
     ease: 'sine.inOut',
   })
+
+  if (!continuousMotionReady) {
+    continuousMotionReady = true
+    gsap.to('.hero-motion-rail__track', {
+      xPercent: -50,
+      duration: 18,
+      repeat: -1,
+      ease: 'none',
+    })
+  }
 }
 
 export function setupMotionEnhancements(root: ParentNode = document): () => void {
