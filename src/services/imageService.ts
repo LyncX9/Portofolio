@@ -6,7 +6,8 @@ import {
   handleAuthExpired,
   isAuthExpiredResponse,
   isCsrfErrorResponse,
-  refreshCsrfToken
+  refreshCsrfToken,
+  resolveMediaUrl
 } from '@/utils/api'
 
 /**
@@ -29,6 +30,13 @@ export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
 
 /** Progress callback type — receives a value between 0 and 100 */
 export type UploadProgressCallback = (percent: number) => void
+
+function normalizeUploadResponse(data: ImageUploadResponse): ImageUploadResponse {
+  return {
+    ...data,
+    url: resolveMediaUrl(data.url)
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Validation
@@ -114,9 +122,10 @@ export function uploadImage(
         const data = JSON.parse(xhr.responseText)
 
         if (xhr.status >= 200 && xhr.status < 300) {
+          const responseData = data.data || data
           resolve({
             success: true,
-            data: data.data || data,
+            data: normalizeUploadResponse(responseData),
             message: data.message
           })
           return

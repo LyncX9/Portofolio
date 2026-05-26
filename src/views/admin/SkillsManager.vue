@@ -8,6 +8,7 @@ import ImageUpload from '@/components/admin/forms/ImageUpload.vue'
 import AdminSectionPreview from '@/components/admin/AdminSectionPreview.vue'
 import SkillsSection from '@/components/SkillsSection.vue'
 import { imageService } from '@/services/imageService'
+import { isImageUrl, resolveMediaUrl } from '@/utils/api'
 import type { Skill } from '@/types'
 
 // ─── Stores ───────────────────────────────────────────────────────────────────
@@ -83,7 +84,7 @@ const previewSkills = computed<Skill[]>(() => {
 })
 
 const currentIconImage = computed(() =>
-  isImageIcon(formData.value.icon) ? formData.value.icon : ''
+  isImageIcon(formData.value.icon) ? resolveMediaUrl(formData.value.icon) : ''
 )
 
 watch(pendingIconFile, (file) => {
@@ -195,7 +196,7 @@ function handleIconRemove(): void {
 }
 
 function isImageIcon(icon: string): boolean {
-  return /\.(png|jpe?g|gif|webp|svg)$/i.test(icon) || icon.startsWith('/uploads/')
+  return isImageUrl(icon)
 }
 
 function extractFilename(url: string): string {
@@ -484,7 +485,7 @@ function handleDragEnd(): void {
           <span class="skill-icon" :title="skill.icon">
             <img
               v-if="isImageIcon(skill.icon)"
-              :src="skill.icon"
+              :src="resolveMediaUrl(skill.icon)"
               :alt="`${skill.name} icon`"
               class="skill-icon-img"
             />

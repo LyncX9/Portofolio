@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Skill } from '@/types'
+import { isImageUrl, resolveMediaUrl } from '@/utils/api'
 
 const props = defineProps<{
   skills?: Skill[] | null
@@ -26,7 +27,7 @@ function iconLabel(icon: string, name: string): string {
 }
 
 function isImageIcon(icon: string): boolean {
-  return /\.(png|jpe?g|gif|webp|svg)$/i.test(icon) || icon.startsWith('/uploads/')
+  return isImageUrl(icon)
 }
 </script>
 
@@ -48,7 +49,7 @@ function isImageIcon(icon: string): boolean {
           <div class="tech-icon">
             <img
               v-if="isImageIcon(tech.icon)"
-              :src="tech.icon"
+              :src="resolveMediaUrl(tech.icon)"
               :alt="`${tech.name} icon`"
               class="tech-icon-img"
             />

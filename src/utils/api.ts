@@ -4,6 +4,42 @@ import type { ApiResponse } from '@/types'
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const CSRF_STORAGE_KEY = 'portfolio_admin_csrf_token'
 
+export function resolveMediaUrl(url?: string | null): string {
+  const value = url?.trim()
+  if (!value) return ''
+
+  if (/^(blob:|data:|https?:\/\/)/i.test(value)) {
+    return value
+  }
+
+  const uploadPath = value.startsWith('/uploads/')
+    ? value
+    : value.startsWith('uploads/')
+      ? `/${value}`
+      : ''
+
+  if (!uploadPath) {
+    return value
+  }
+
+  if (/^https?:\/\//i.test(API_BASE_URL)) {
+    return new URL(uploadPath, new URL(API_BASE_URL).origin).toString()
+  }
+
+  return uploadPath
+}
+
+export function isImageUrl(url?: string | null): boolean {
+  const value = url?.trim()
+  if (!value) return false
+  return (
+    /^(blob:|data:image\/)/i.test(value) ||
+    value.startsWith('/uploads/') ||
+    value.startsWith('uploads/') ||
+    /\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(value)
+  )
+}
+
 /**
  * Read the CSRF token from the csrf_token cookie.
  * The server sets this cookie (non-HTTP-only) on login so the client can
