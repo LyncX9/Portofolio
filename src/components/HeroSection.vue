@@ -172,6 +172,7 @@ watch(
   width: max-content;
   gap: 0.9rem;
   padding: 0.75rem 0;
+  animation: hero-motion-marquee 18s linear infinite;
   will-change: transform;
 }
 
@@ -189,6 +190,16 @@ watch(
   font-size: 0.82rem;
   font-weight: 800;
   box-shadow: 0 14px 42px rgba(14, 165, 233, 0.12);
+}
+
+@keyframes hero-motion-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
 }
 
 .hero-container {
