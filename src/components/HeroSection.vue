@@ -23,22 +23,6 @@ watch(
 
 <template>
   <section id="hero" class="hero">
-    <div class="hero-motion-rail" aria-hidden="true">
-      <div class="hero-motion-rail__track">
-        <span>Vue</span>
-        <span>TypeScript</span>
-        <span>GSAP Motion</span>
-        <span>Portfolio API</span>
-        <span>Admin CRUD</span>
-        <span>Responsive UI</span>
-        <span>Vue</span>
-        <span>TypeScript</span>
-        <span>GSAP Motion</span>
-        <span>Portfolio API</span>
-        <span>Admin CRUD</span>
-        <span>Responsive UI</span>
-      </div>
-    </div>
     <div class="hero-container">
       <div class="hero-content motion-hero-copy">
         <div class="hero-kicker">
@@ -60,20 +44,6 @@ watch(
         <div class="hero-actions">
           <a href="#projects" class="hero-button hero-button--primary">View Projects</a>
           <a href="#contact" class="hero-button hero-button--ghost">Contact Me</a>
-        </div>
-        <div class="hero-metrics" aria-label="Portfolio highlights">
-          <div class="hero-metric" data-motion-card>
-            <strong>Vue</strong>
-            <span>Frontend</span>
-          </div>
-          <div class="hero-metric" data-motion-card>
-            <strong>CRUD</strong>
-            <span>Admin-ready</span>
-          </div>
-          <div class="hero-metric" data-motion-card>
-            <strong>API</strong>
-            <span>Connected</span>
-          </div>
         </div>
       </div>
       <div class="hero-media-wrap">
@@ -152,54 +122,6 @@ watch(
   inset: 0;
   background: linear-gradient(90deg, rgba(56, 189, 248, 0.08), transparent 34%, rgba(236, 72, 153, 0.08));
   pointer-events: none;
-}
-
-.hero-motion-rail {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 2rem;
-  z-index: 1;
-  overflow: hidden;
-  border-block: 1px solid rgba(125, 211, 252, 0.14);
-  background: rgba(5, 9, 17, 0.42);
-  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
-  pointer-events: none;
-}
-
-.hero-motion-rail__track {
-  display: flex;
-  width: max-content;
-  gap: 0.9rem;
-  padding: 0.75rem 0;
-  animation: hero-motion-marquee 18s linear infinite;
-  will-change: transform;
-}
-
-.hero-motion-rail__track span {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.15rem;
-  padding: 0 1rem;
-  border: 1px solid rgba(125, 211, 252, 0.22);
-  border-radius: 999px;
-  background:
-    linear-gradient(135deg, rgba(56, 189, 248, 0.14), rgba(168, 85, 247, 0.12)),
-    rgba(8, 13, 24, 0.76);
-  color: #e0f2fe;
-  font-size: 0.82rem;
-  font-weight: 800;
-  box-shadow: 0 14px 42px rgba(14, 165, 233, 0.12);
-}
-
-@keyframes hero-motion-marquee {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
 }
 
 .hero-container {
@@ -327,35 +249,6 @@ watch(
   background: rgba(14, 165, 233, 0.12);
 }
 
-.hero-metrics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.8rem;
-  margin-top: 0.55rem;
-  max-width: 520px;
-}
-
-.hero-metric {
-  padding: 0.9rem;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 12px;
-  background: rgba(8, 13, 24, 0.66);
-}
-
-.hero-metric strong {
-  display: block;
-  color: #f8fafc;
-  font-size: 1rem;
-}
-
-.hero-metric span {
-  display: block;
-  margin-top: 0.25rem;
-  color: #94a3b8;
-  font-size: 0.78rem;
-  font-weight: 600;
-}
-
 .hero-media-wrap {
   position: relative;
   display: grid;
@@ -479,11 +372,7 @@ watch(
 @media (max-width: 768px) {
   .hero {
     min-height: auto;
-    padding: 88px 1rem 6rem;
-  }
-
-  .hero-motion-rail {
-    bottom: 1.2rem;
+    padding: 88px 1rem 2.5rem;
   }
 
   .hero-container {
@@ -502,10 +391,6 @@ watch(
   .avatar-container {
     width: 200px;
     height: 200px;
-  }
-
-  .hero-metrics {
-    grid-template-columns: 1fr;
   }
 
   .hero-signal,
