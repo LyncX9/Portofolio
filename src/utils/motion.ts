@@ -116,7 +116,12 @@ export function revealElement(element: Element): void {
 }
 
 export function animatePageIn(root: ParentNode = document): void {
-  if (typeof window === 'undefined' || prefersReducedMotion()) return
+  if (typeof window === 'undefined') return
+
+  if (prefersReducedMotion()) {
+    startHeroTicker()
+    return
+  }
 
   const elements = root.querySelectorAll(
     '.motion-hero-copy > *, .motion-hero-media, .hero-signal, .section-title, .section-kicker, [data-motion-card]'
@@ -151,15 +156,22 @@ export function animatePageIn(root: ParentNode = document): void {
     ease: 'sine.inOut',
   })
 
-  if (!continuousMotionReady) {
-    continuousMotionReady = true
-    gsap.to('.hero-motion-rail__track', {
-      xPercent: -50,
-      duration: 18,
-      repeat: -1,
-      ease: 'none',
-    })
-  }
+  startHeroTicker()
+}
+
+function startHeroTicker(): void {
+  if (continuousMotionReady || typeof window === 'undefined') return
+
+  const ticker = document.querySelector('.hero-motion-rail__track')
+  if (!ticker) return
+
+  continuousMotionReady = true
+  gsap.to(ticker, {
+    xPercent: -50,
+    duration: 18,
+    repeat: -1,
+    ease: 'none',
+  })
 }
 
 export function setupMotionEnhancements(root: ParentNode = document): () => void {
