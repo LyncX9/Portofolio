@@ -47,17 +47,8 @@ watch(
         </div>
       </div>
       <div class="hero-media-wrap">
-        <div class="hero-signal" aria-hidden="true">
-          <span></span>
-          Live portfolio
-        </div>
         <div class="ava motion-hero-media" data-motion-card>
           <img :src="profileImageSrc" alt="Profile" class="ava-img" @error="imageFailed = true" />
-        </div>
-        <div class="hero-code-card" data-motion-card aria-hidden="true">
-          <span class="code-dot code-dot--cyan"></span>
-          <span>design</span>
-          <strong>motion-ready</strong>
         </div>
       </div>
     </div>
@@ -265,60 +256,6 @@ watch(
   pointer-events: none;
 }
 
-.hero-signal,
-.hero-code-card {
-  position: absolute;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 12px;
-  background: rgba(5, 9, 17, 0.82);
-  color: #e2e8f0;
-  font-size: 0.82rem;
-  font-weight: 800;
-  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.32);
-  backdrop-filter: blur(18px);
-}
-
-.hero-signal {
-  top: 10%;
-  right: 2%;
-  padding: 0.7rem 0.85rem;
-}
-
-.hero-signal span {
-  width: 0.65rem;
-  height: 0.65rem;
-  border-radius: 999px;
-  background: #22c55e;
-}
-
-.hero-code-card {
-  left: 0;
-  bottom: 9%;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
-  padding: 0.9rem 1rem;
-  color: #94a3b8;
-}
-
-.hero-code-card strong {
-  color: #e0f2fe;
-}
-
-.code-dot {
-  width: 0.6rem;
-  height: 0.6rem;
-  border-radius: 999px;
-}
-
-.code-dot--cyan {
-  background: #38bdf8;
-}
-
 .hero-visual {
   display: flex;
   justify-content: center;
@@ -391,12 +328,6 @@ watch(
   .avatar-container {
     width: 200px;
     height: 200px;
-  }
-
-  .hero-signal,
-  .hero-code-card {
-    position: static;
-    margin: 0.75rem 0;
   }
 
   .hero-media-wrap::before {
