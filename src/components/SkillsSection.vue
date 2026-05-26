@@ -50,7 +50,8 @@ function markIconFailed(id: string): void {
       <div class="skills-heading">
         <span class="section-kicker">Tech stack</span>
         <h2 class="section-title">
-          I build clean, responsive, and modern <span class="gradient-text">web interfaces.</span>
+          I build intelligent applications and modern
+          <span class="gradient-text">digital experiences.</span>
         </h2>
         <p class="skills-subtitle">
           Tools and technologies I use to ship focused, responsive, and maintainable interfaces.

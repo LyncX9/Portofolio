@@ -87,6 +87,8 @@ const currentIconImage = computed(() =>
   isImageIcon(formData.value.icon) ? resolveMediaUrl(formData.value.icon) : ''
 )
 
+const isUsingImageIcon = computed(() => Boolean(pendingIconFile.value || currentIconImage.value))
+
 watch(pendingIconFile, (file) => {
   if (pendingIconPreview.value) {
     URL.revokeObjectURL(pendingIconPreview.value)
@@ -424,6 +426,7 @@ function handleDragEnd(): void {
           />
 
           <TextInput
+            v-if="!isUsingImageIcon"
             v-model="formData.icon"
             label="Text Icon / Icon URL"
             placeholder="e.g. JS, Vue, or /uploads/skills/icon.png"

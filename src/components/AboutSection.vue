@@ -51,7 +51,7 @@ watch(
           </div>
         </div>
         <div class="about-text" data-motion-card>
-          <div class="about-text__eyebrow">Frontend learner with product-minded execution</div>
+          <div class="about-text__eyebrow">AI enthusiast with software engineering mindset</div>
           <p v-for="(paragraph, idx) in displayParagraphs" :key="idx">
             {{ paragraph }}
           </p>

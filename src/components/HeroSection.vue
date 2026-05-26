@@ -1,17 +1,44 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { gsap } from 'gsap'
+import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
 import type { HeroContent } from '@/types'
 import ava from '@/assets/ava.png'
+
+gsap.registerPlugin(ScrollToPlugin)
 
 const props = defineProps<{
   hero?: HeroContent | null
 }>()
 
 const imageFailed = ref(false)
+const fallbackDescription = 'Currently learning and building intelligent web experiences.'
+let activeScrollTween: ReturnType<typeof gsap.to> | null = null
 
 const profileImageSrc = computed(() =>
   props.hero?.profileImage && !imageFailed.value ? props.hero.profileImage : ava
 )
+
+function scrollToSection(sectionId: string): void {
+  const element = document.getElementById(sectionId)
+  if (!element) return
+
+  const navbarHeight = document.querySelector('.navbar')?.getBoundingClientRect().height ?? 0
+  const targetY = Math.max(
+    0,
+    window.scrollY + element.getBoundingClientRect().top - navbarHeight - 12
+  )
+
+  activeScrollTween?.kill()
+  activeScrollTween = gsap.to(window, {
+    duration: 1.15,
+    ease: 'power3.inOut',
+    scrollTo: { y: targetY, autoKill: true },
+    onComplete: () => {
+      activeScrollTween = null
+    },
+  })
+}
 
 watch(
   () => props.hero?.profileImage,
@@ -35,15 +62,26 @@ watch(
         </div>
         <h1 class="hero-title">{{ hero?.title ?? 'Aspiring Web Developer' }}</h1>
         <p class="hero-description">
-          {{ hero?.description ?? 'Currently learning and building frontend projects while studying at' }}
-          <span class="highlight">Nusaputra University</span>
+          {{ hero?.description ?? fallbackDescription }}
         </p>
         <p class="hero-bio">
           {{ hero?.bio ?? "I'm a web development enthusiast who enjoys turning ideas into simple, usable interfaces. I'm currently expanding my skills in frontend technologies and eager to gain real industry experience." }}
         </p>
         <div class="hero-actions">
-          <a href="#projects" class="hero-button hero-button--primary">View Projects</a>
-          <a href="#contact" class="hero-button hero-button--ghost">Contact Me</a>
+          <a
+            href="#projects"
+            class="hero-button hero-button--primary"
+            @click.prevent="scrollToSection('projects')"
+          >
+            View Projects
+          </a>
+          <a
+            href="#contact"
+            class="hero-button hero-button--ghost"
+            @click.prevent="scrollToSection('contact')"
+          >
+            Contact Me
+          </a>
         </div>
       </div>
       <div class="hero-media-wrap">
@@ -182,11 +220,6 @@ watch(
   font-size: 1.1rem;
   color: var(--color-text-secondary);
   margin: 0;
-}
-
-.highlight {
-  color: var(--color-primary);
-  font-weight: 600;
 }
 
 .hero-bio {
