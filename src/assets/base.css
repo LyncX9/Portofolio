@@ -10,6 +10,8 @@
   --color-secondary: #6366f1;
   --color-accent: #ec4899;
   --color-accent-dark: #db2777;
+  --color-cyan: #38bdf8;
+  --color-emerald: #10b981;
 
   /* ── Backgrounds ───────────────────────────────────────── */
   --color-background: #0f0f1e;
@@ -171,7 +173,7 @@ video {
 
 /* ── Text ──────────────────────────────────────────────────── */
 .gradient-text {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(135deg, #67e8f9, var(--color-primary), var(--color-accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

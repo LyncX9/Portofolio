@@ -118,7 +118,7 @@ export function animatePageIn(root: ParentNode = document): void {
   if (typeof window === 'undefined' || prefersReducedMotion()) return
 
   const elements = root.querySelectorAll(
-    '.motion-hero-copy > *, .motion-hero-media, .section-title, .section-kicker, [data-motion-card]'
+    '.motion-hero-copy > *, .motion-hero-media, .hero-signal, .section-title, .section-kicker, [data-motion-card]'
   )
 
   gsap.fromTo(
@@ -133,6 +133,22 @@ export function animatePageIn(root: ParentNode = document): void {
       overwrite: 'auto',
     }
   )
+
+  gsap.to('.motion-hero-media', {
+    y: -10,
+    duration: 3.2,
+    repeat: -1,
+    yoyo: true,
+    ease: 'sine.inOut',
+  })
+
+  gsap.to('.hero-signal', {
+    x: 8,
+    duration: 2.6,
+    repeat: -1,
+    yoyo: true,
+    ease: 'sine.inOut',
+  })
 }
 
 export function setupMotionEnhancements(root: ParentNode = document): () => void {

@@ -117,10 +117,11 @@ function projectCategories(project: Project): string[] {
 }
 
 .section-title {
-  font-size: 2.5rem;
+  font-size: clamp(2.4rem, 5vw, 4.4rem);
   font-weight: 700;
   color: var(--color-text);
   margin-bottom: 3rem;
+  line-height: 1;
 }
 
 .projects-grid {
@@ -158,8 +159,10 @@ function projectCategories(project: Project): string[] {
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
   align-items: center;
-  background: rgba(12, 17, 31, 0.72);
-  border: 1px solid rgba(148, 163, 184, 0.16);
+  background:
+    linear-gradient(135deg, rgba(12, 17, 31, 0.88), rgba(20, 24, 43, 0.7)),
+    rgba(12, 17, 31, 0.72);
+  border: 1px solid rgba(125, 211, 252, 0.18);
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s ease;
@@ -180,8 +183,17 @@ function projectCategories(project: Project): string[] {
 .project-image {
   position: relative;
   width: 100%;
-  height: 300px;
+  height: 340px;
   overflow: hidden;
+}
+
+.project-image::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 42%;
+  background: linear-gradient(to top, rgba(8, 13, 24, 0.82), transparent);
+  pointer-events: none;
 }
 
 .project-img {

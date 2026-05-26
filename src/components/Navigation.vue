@@ -53,10 +53,10 @@ const navigateTo = (path: string) => {
   left: 0;
   right: 0;
   z-index: 1000;
-  background: rgba(5, 9, 17, 0.76);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-  padding: 1rem 2rem;
+  background: linear-gradient(90deg, rgba(5, 9, 17, 0.82), rgba(11, 18, 32, 0.74));
+  backdrop-filter: blur(22px);
+  border-bottom: 1px solid rgba(125, 211, 252, 0.14);
+  padding: 0.9rem 2rem;
 }
 
 .logo, .logo-img {
@@ -80,7 +80,7 @@ const navigateTo = (path: string) => {
 .logo {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.7rem;
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--color-text);
@@ -111,7 +111,7 @@ const navigateTo = (path: string) => {
 .nav-menu {
   display: flex;
   list-style: none;
-  gap: clamp(0.9rem, 2vw, 1.6rem);
+  gap: 0.45rem;
   margin: 0;
   padding: 0;
 }
@@ -120,9 +120,15 @@ const navigateTo = (path: string) => {
   position: relative;
   color: var(--color-text-secondary);
   font-size: 0.94rem;
-  font-weight: 500;
+  font-weight: 700;
   transition: color 0.25s ease;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.35rem;
+  padding: 0 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
 }
 
 .nav-menu li a::after {
@@ -141,6 +147,8 @@ const navigateTo = (path: string) => {
 
 .nav-menu li a:hover {
   color: #e0f2fe;
+  border-color: rgba(125, 211, 252, 0.18);
+  background: rgba(14, 165, 233, 0.08);
 }
 
 .nav-menu li a:hover::after {
