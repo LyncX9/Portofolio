@@ -33,12 +33,15 @@ function isImageIcon(icon: string): boolean {
 <template>
   <section id="skills" class="skills">
     <div class="skills-container">
-      <h2 class="section-title">
-        I build clean, responsive, and modern <span class="gradient-text">web interfaces.</span>
-      </h2>
-      <p class="skills-subtitle">
-        Tools and technologies I use to ship focused, responsive, and maintainable interfaces.
-      </p>
+      <div class="skills-heading">
+        <span class="section-kicker">Tech stack</span>
+        <h2 class="section-title">
+          I build clean, responsive, and modern <span class="gradient-text">web interfaces.</span>
+        </h2>
+        <p class="skills-subtitle">
+          Tools and technologies I use to ship focused, responsive, and maintainable interfaces.
+        </p>
+      </div>
 
       <div class="tech-grid">
         <div v-for="tech in displaySkills" :key="tech.id" class="tech-item" data-motion-card>
@@ -52,6 +55,7 @@ function isImageIcon(icon: string): boolean {
             <span v-else>{{ iconLabel(tech.icon, tech.name) }}</span>
           </div>
           <span class="tech-name">{{ tech.name }}</span>
+          <span class="tech-category">{{ tech.category }}</span>
         </div>
       </div>
     </div>
@@ -60,11 +64,12 @@ function isImageIcon(icon: string): boolean {
 
 <style scoped>
 .skills {
-  padding: 6rem 2rem;
+  padding: 7rem 2rem;
   background:
-    linear-gradient(135deg, rgba(17, 24, 39, 0.88) 0%, rgba(13, 18, 32, 0.95) 100%),
+    linear-gradient(135deg, rgba(5, 9, 17, 0.98) 0%, rgba(14, 20, 35, 0.96) 100%),
     var(--color-background);
   position: relative;
+  overflow: hidden;
 }
 
 .skills::before {
@@ -75,7 +80,7 @@ function isImageIcon(icon: string): boolean {
   transform: translate(-50%, -50%);
   width: 400px;
   height: 400px;
-  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.08), transparent);
+  background: conic-gradient(from 180deg, transparent, rgba(56, 189, 248, 0.09), rgba(168, 85, 247, 0.08), transparent);
   pointer-events: none;
 }
 
@@ -87,8 +92,22 @@ function isImageIcon(icon: string): boolean {
   text-align: center;
 }
 
+.skills-heading {
+  max-width: 820px;
+  margin: 0 auto 3rem;
+}
+
+.section-kicker {
+  display: inline-flex;
+  margin-bottom: 0.75rem;
+  color: #67e8f9;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .section-title {
-  font-size: 2.5rem;
+  font-size: clamp(2rem, 4.8vw, 4rem);
   font-weight: 700;
   color: var(--color-text);
   margin-bottom: 1rem;
@@ -104,8 +123,8 @@ function isImageIcon(icon: string): boolean {
 
 .tech-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
   margin-bottom: 2rem;
 }
 
@@ -115,11 +134,14 @@ function isImageIcon(icon: string): boolean {
   align-items: center;
   gap: 0.75rem;
   padding: 1.5rem;
-  background: rgba(9, 14, 26, 0.72);
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(8, 13, 24, 0.72));
+  border: 1px solid rgba(125, 211, 252, 0.16);
+  border-radius: 16px;
   transition: all 0.3s ease;
   cursor: pointer;
+  min-height: 170px;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.18);
 }
 
 .tech-item:hover {
@@ -133,7 +155,7 @@ function isImageIcon(icon: string): boolean {
   place-items: center;
   width: 3.25rem;
   height: 3.25rem;
-  border-radius: 14px;
+  border-radius: 16px;
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(16, 185, 129, 0.12));
   border: 1px solid rgba(125, 211, 252, 0.25);
   color: #e0f2fe;
@@ -149,9 +171,16 @@ function isImageIcon(icon: string): boolean {
 }
 
 .tech-name {
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 800;
   color: var(--color-text);
+}
+
+.tech-category {
+  margin-top: -0.35rem;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 @media (max-width: 768px) {

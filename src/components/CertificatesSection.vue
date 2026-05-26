@@ -33,8 +33,11 @@ function closeCertificatePreview(): void {
   <section id="certificates" class="certificates">
     <div class="certificates-container">
       <div class="section-heading">
-        <span class="section-kicker">Credentials</span>
-        <h2 class="section-title">Certificates</h2>
+        <div>
+          <span class="section-kicker">Credentials</span>
+          <h2 class="section-title">Certificates</h2>
+        </div>
+        <p class="section-copy">A compact gallery of certificates with in-page fullscreen previews.</p>
       </div>
 
       <div v-if="displayCertificates.length > 0" class="certificates-grid">
@@ -135,7 +138,7 @@ function closeCertificatePreview(): void {
 
 <style scoped>
 .certificates {
-  padding: 6rem 2rem;
+  padding: 7rem 2rem;
   background:
     linear-gradient(180deg, rgba(13, 18, 32, 0.94), rgba(8, 13, 24, 0.98)),
     var(--color-background);
@@ -147,6 +150,10 @@ function closeCertificatePreview(): void {
 }
 
 .section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
   margin-bottom: 2rem;
 }
 
@@ -162,8 +169,15 @@ function closeCertificatePreview(): void {
 .section-title {
   margin: 0;
   color: var(--color-text);
-  font-size: 2.5rem;
-  line-height: 1.15;
+  font-size: clamp(2.4rem, 5vw, 4.4rem);
+  line-height: 1;
+}
+
+.section-copy {
+  max-width: 360px;
+  margin: 0;
+  color: #94a3b8;
+  line-height: 1.7;
 }
 
 .certificates-grid {
@@ -200,9 +214,10 @@ function closeCertificatePreview(): void {
 .certificate-card {
   width: 100%;
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 10px;
-  background: rgba(15, 23, 42, 0.74);
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(8, 13, 24, 0.72));
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
@@ -220,7 +235,9 @@ function closeCertificatePreview(): void {
   aspect-ratio: 16 / 10;
   padding: 0;
   border: 0;
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(16, 185, 129, 0.1));
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.14), rgba(168, 85, 247, 0.12)),
+    rgba(2, 6, 23, 0.7);
   overflow: hidden;
 }
 
@@ -419,6 +436,14 @@ function closeCertificatePreview(): void {
 
   .section-title {
     font-size: 2rem;
+  }
+
+  .section-heading {
+    display: block;
+  }
+
+  .section-copy {
+    margin-top: 1rem;
   }
 
   .certificates-grid {

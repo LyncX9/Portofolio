@@ -12,9 +12,18 @@ const displayExperience = computed(() => props.experience ?? [])
 <template>
   <section id="experience" class="experience">
     <div class="experience-container">
-      <h2 class="section-title">Work Experience</h2>
+      <div class="section-heading">
+        <span class="section-kicker">Timeline</span>
+        <h2 class="section-title">Work Experience</h2>
+      </div>
       <div v-if="displayExperience.length > 0" class="experience-grid">
-        <div v-for="exp in displayExperience" :key="exp.id" class="experience-card" data-motion-card>
+        <div
+          v-for="(exp, index) in displayExperience"
+          :key="exp.id"
+          class="experience-card"
+          data-motion-card
+        >
+          <span class="experience-index">{{ String(index + 1).padStart(2, '0') }}</span>
           <div class="card-icon">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -42,7 +51,7 @@ const displayExperience = computed(() => props.experience ?? [])
 
 <style scoped>
 .experience {
-  padding: 6rem 2rem;
+  padding: 7rem 2rem;
   background:
     linear-gradient(135deg, rgba(8, 13, 24, 0.98) 0%, rgba(17, 24, 39, 0.94) 100%),
     var(--color-background);
@@ -73,11 +82,25 @@ const displayExperience = computed(() => props.experience ?? [])
   z-index: 1;
 }
 
+.section-heading {
+  margin-bottom: 3rem;
+}
+
+.section-kicker {
+  display: inline-flex;
+  margin-bottom: 0.7rem;
+  color: #67e8f9;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .section-title {
-  font-size: 2.5rem;
+  font-size: clamp(2.4rem, 5vw, 4.4rem);
   font-weight: 700;
   color: var(--color-text);
-  margin-bottom: 3rem;
+  line-height: 1;
+  margin: 0;
 }
 
 .experience-grid {
@@ -111,9 +134,12 @@ const displayExperience = computed(() => props.experience ?? [])
 }
 
 .experience-card {
-  background: rgba(26, 26, 46, 0.5);
-  border: 1px solid var(--color-border);
-  border-radius: 15px;
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(145deg, rgba(15, 23, 42, 0.86), rgba(22, 17, 42, 0.7));
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 16px;
   padding: 2rem;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
@@ -122,11 +148,30 @@ const displayExperience = computed(() => props.experience ?? [])
   gap: 1rem;
 }
 
+.experience-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, #67e8f9, #a855f7, #ec4899);
+}
+
 .experience-card:hover {
-  background: rgba(26, 26, 46, 0.8);
-  border-color: var(--color-primary);
+  background:
+    linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(23, 20, 48, 0.82));
+  border-color: rgba(125, 211, 252, 0.42);
   transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(168, 85, 247, 0.2);
+  box-shadow: 0 26px 80px rgba(14, 165, 233, 0.12);
+}
+
+.experience-index {
+  position: absolute;
+  top: 1.4rem;
+  right: 1.4rem;
+  color: rgba(226, 232, 240, 0.12);
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .card-icon {

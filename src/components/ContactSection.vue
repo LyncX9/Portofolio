@@ -101,8 +101,9 @@ function normalizeSocialHref(link: { icon?: string; label?: string; href?: strin
 
 <template>
   <section id="contact" class="contact">
-    <div class="contact-container">
-      <h2 class="section-title">Contact</h2>
+    <div class="contact-container" data-motion-card>
+      <span class="section-kicker">Next step</span>
+      <h2 class="section-title">Let's build something clean and useful.</h2>
       <p class="contact-subtitle">{{ displaySubtitle }}</p>
 
       <div class="social-links">
@@ -124,7 +125,7 @@ function normalizeSocialHref(link: { icon?: string; label?: string; href?: strin
               :d="path"
             />
           </svg>
-          <span class="sr-only">{{ link.label }}</span>
+          <span class="social-label">{{ link.label }}</span>
         </a>
       </div>
     </div>
@@ -133,7 +134,7 @@ function normalizeSocialHref(link: { icon?: string; label?: string; href?: strin
 
 <style scoped>
 .contact {
-  padding: 6rem 2rem;
+  padding: 7rem 2rem;
   background:
     linear-gradient(180deg, rgba(8, 13, 24, 0.98), rgba(13, 18, 32, 0.96)),
     var(--color-background);
@@ -157,18 +158,36 @@ function normalizeSocialHref(link: { icon?: string; label?: string; href?: strin
 }
 
 .contact-container {
-  max-width: 600px;
+  max-width: 900px;
   width: 100%;
   text-align: center;
   position: relative;
   z-index: 1;
+  padding: clamp(2rem, 5vw, 4rem);
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.84), rgba(24, 17, 42, 0.68)),
+    rgba(8, 13, 24, 0.72);
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.28);
+}
+
+.section-kicker {
+  display: inline-flex;
+  margin-bottom: 0.85rem;
+  color: #67e8f9;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .section-title {
-  font-size: 2.5rem;
+  max-width: 740px;
+  margin: 0 auto 1.3rem;
+  font-size: clamp(2.2rem, 5vw, 4.6rem);
   font-weight: 700;
   color: var(--color-text);
-  margin-bottom: 2rem;
+  line-height: 1.03;
 }
 
 .contact-subtitle {
@@ -184,7 +203,7 @@ function normalizeSocialHref(link: { icon?: string; label?: string; href?: strin
 }
 
 .social-links {
-  display: inline-flex;
+  display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
@@ -198,11 +217,13 @@ function normalizeSocialHref(link: { icon?: string; label?: string; href?: strin
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
+  min-width: 112px;
+  height: 54px;
+  gap: 0.55rem;
+  padding: 0 0.9rem;
   color: var(--color-text);
   background: rgba(9, 14, 26, 0.78);
-  border-radius: 50%;
+  border-radius: 999px;
   border: 1px solid rgba(148, 163, 184, 0.2);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
 }
@@ -215,10 +236,16 @@ function normalizeSocialHref(link: { icon?: string; label?: string; href?: strin
 }
 
 .social-icon {
-  width: 1.35rem;
-  height: 1.35rem;
+  width: 1.15rem;
+  height: 1.15rem;
   fill: currentColor;
   transition: transform 0.3s ease;
+}
+
+.social-label {
+  color: currentColor;
+  font-size: 0.85rem;
+  font-weight: 800;
 }
 
 .social-link:hover .social-icon {
@@ -251,13 +278,19 @@ function normalizeSocialHref(link: { icon?: string; label?: string; href?: strin
   }
 
   .social-link {
+    min-width: 0;
     width: 45px;
     height: 45px;
+    padding: 0;
   }
 
   .social-icon {
     width: 1.2rem;
     height: 1.2rem;
+  }
+
+  .social-label {
+    display: none;
   }
 }
 </style>
