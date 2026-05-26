@@ -32,6 +32,7 @@ function projectCategories(project: Project): string[] {
           :key="project.id"
           class="project-card"
           :class="{ featured: project.featured }"
+          data-motion-card
         >
           <div class="project-image">
             <img
@@ -105,7 +106,9 @@ function projectCategories(project: Project): string[] {
 <style scoped>
 .projects {
   padding: 6rem 2rem;
-  background-color: var(--color-background);
+  background:
+    linear-gradient(180deg, rgba(7, 10, 18, 0.6), rgba(14, 18, 31, 0.95)),
+    var(--color-background);
 }
 
 .projects-container {
@@ -155,22 +158,23 @@ function projectCategories(project: Project): string[] {
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
   align-items: center;
-  background: rgba(26, 26, 46, 0.3);
-  border: 1px solid var(--color-border);
-  border-radius: 15px;
+  background: rgba(12, 17, 31, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s ease;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2);
 }
 
 .project-card:hover {
-  background: rgba(26, 26, 46, 0.5);
-  border-color: var(--color-primary);
-  box-shadow: 0 10px 40px rgba(168, 85, 247, 0.15);
+  background: rgba(13, 21, 37, 0.86);
+  border-color: rgba(56, 189, 248, 0.42);
+  box-shadow: 0 28px 90px rgba(14, 165, 233, 0.12);
 }
 
 .project-card.featured {
-  border-color: var(--color-primary);
-  background: rgba(168, 85, 247, 0.05);
+  border-color: rgba(168, 85, 247, 0.58);
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.11), rgba(14, 165, 233, 0.06));
 }
 
 .project-image {

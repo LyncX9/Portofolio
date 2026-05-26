@@ -14,7 +14,7 @@ const displayExperience = computed(() => props.experience ?? [])
     <div class="experience-container">
       <h2 class="section-title">Work Experience</h2>
       <div v-if="displayExperience.length > 0" class="experience-grid">
-        <div v-for="exp in displayExperience" :key="exp.id" class="experience-card">
+        <div v-for="exp in displayExperience" :key="exp.id" class="experience-card" data-motion-card>
           <div class="card-icon">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -43,7 +43,9 @@ const displayExperience = computed(() => props.experience ?? [])
 <style scoped>
 .experience {
   padding: 6rem 2rem;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(168, 85, 247, 0.03) 100%);
+  background:
+    linear-gradient(135deg, rgba(8, 13, 24, 0.98) 0%, rgba(17, 24, 39, 0.94) 100%),
+    var(--color-background);
   position: relative;
 }
 
@@ -60,7 +62,7 @@ const displayExperience = computed(() => props.experience ?? [])
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.05), transparent);
+  background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.06), transparent);
   pointer-events: none;
 }
 

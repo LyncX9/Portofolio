@@ -42,6 +42,7 @@ function closeCertificatePreview(): void {
           v-for="certificate in displayCertificates"
           :key="certificate.id"
           class="certificate-card"
+          data-motion-card
         >
           <button
             type="button"
@@ -136,7 +137,7 @@ function closeCertificatePreview(): void {
 .certificates {
   padding: 6rem 2rem;
   background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.1), rgba(20, 24, 43, 0.82)),
+    linear-gradient(180deg, rgba(13, 18, 32, 0.94), rgba(8, 13, 24, 0.98)),
     var(--color-background);
 }
 

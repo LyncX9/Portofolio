@@ -35,7 +35,7 @@ const navigateTo = (path: string) => {
       </div>
 
       <ul class="nav-menu" :class="{ active: mobileMenuOpen }">
-        <li><a href="#home" @click.prevent="scrollToSection('home')">Home</a></li>
+        <li><a href="#hero" @click.prevent="scrollToSection('hero')">Home</a></li>
         <li><a href="#about" @click.prevent="scrollToSection('about')">About</a></li>
         <li><a href="#experience" @click.prevent="scrollToSection('experience')">Experience</a></li>
         <li><a href="#projects" @click.prevent="scrollToSection('projects')">Projects</a></li>
@@ -53,8 +53,8 @@ const navigateTo = (path: string) => {
   left: 0;
   right: 0;
   z-index: 1000;
-  background: rgba(7, 10, 18, 0.78);
-  backdrop-filter: blur(18px);
+  background: rgba(5, 9, 17, 0.76);
+  backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(148, 163, 184, 0.14);
   padding: 1rem 2rem;
 }
@@ -85,6 +85,11 @@ const navigateTo = (path: string) => {
   font-weight: 700;
   color: var(--color-text);
   cursor: pointer;
+  transition: transform 0.22s ease;
+}
+
+.logo:hover {
+  transform: translateY(-1px);
 }
 
 .logo-icon {

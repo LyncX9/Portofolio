@@ -37,12 +37,11 @@ function isImageIcon(icon: string): boolean {
         I build clean, responsive, and modern <span class="gradient-text">web interfaces.</span>
       </h2>
       <p class="skills-subtitle">
-        That values improving people's lives through accessible design. In a project it isn't just
-        the output. It's the.
+        Tools and technologies I use to ship focused, responsive, and maintainable interfaces.
       </p>
 
       <div class="tech-grid">
-        <div v-for="tech in displaySkills" :key="tech.id" class="tech-item">
+        <div v-for="tech in displaySkills" :key="tech.id" class="tech-item" data-motion-card>
           <div class="tech-icon">
             <img
               v-if="isImageIcon(tech.icon)"
@@ -62,7 +61,9 @@ function isImageIcon(icon: string): boolean {
 <style scoped>
 .skills {
   padding: 6rem 2rem;
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);
+  background:
+    linear-gradient(135deg, rgba(17, 24, 39, 0.88) 0%, rgba(13, 18, 32, 0.95) 100%),
+    var(--color-background);
   position: relative;
 }
 
@@ -74,9 +75,7 @@ function isImageIcon(icon: string): boolean {
   transform: translate(-50%, -50%);
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.1), transparent);
-  border-radius: 50%;
-  filter: blur(60px);
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.08), transparent);
   pointer-events: none;
 }
 
@@ -116,16 +115,16 @@ function isImageIcon(icon: string): boolean {
   align-items: center;
   gap: 0.75rem;
   padding: 1.5rem;
-  background: rgba(26, 26, 46, 0.5);
-  border: 1px solid var(--color-border);
+  background: rgba(9, 14, 26, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 12px;
   transition: all 0.3s ease;
   cursor: pointer;
 }
 
 .tech-item:hover {
-  background: rgba(26, 26, 46, 0.8);
-  border-color: var(--color-primary);
+  background: rgba(12, 22, 36, 0.9);
+  border-color: rgba(56, 189, 248, 0.48);
   transform: translateY(-5px);
 }
 

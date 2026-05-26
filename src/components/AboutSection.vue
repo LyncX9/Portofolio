@@ -42,7 +42,7 @@ watch(
       <h2 class="section-title">About</h2>
       <div class="about-content">
         <div class="about-image">
-          <div class="ava">
+          <div class="ava" data-motion-card>
             <img :src="displayImage" alt="About" class="ava-img" @error="imageFailed = true" />
           </div>
         </div>
@@ -51,7 +51,9 @@ watch(
             {{ paragraph }}
           </p>
           <div class="skills-list">
-            <div v-for="skill in displaySkills" :key="skill" class="skill-item">{{ skill }}</div>
+            <div v-for="skill in displaySkills" :key="skill" class="skill-item" data-motion-card>
+              {{ skill }}
+            </div>
           </div>
         </div>
       </div>

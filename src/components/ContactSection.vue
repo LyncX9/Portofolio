@@ -111,6 +111,7 @@ function normalizeSocialHref(link: { icon?: string; label?: string; href?: strin
           :key="link.id"
           :href="link.href"
           class="social-link"
+          data-motion-card
           :title="link.label"
           :aria-label="link.label"
           target="_blank"
@@ -133,7 +134,9 @@ function normalizeSocialHref(link: { icon?: string; label?: string; href?: strin
 <style scoped>
 .contact {
   padding: 6rem 2rem;
-  background-color: var(--color-background);
+  background:
+    linear-gradient(180deg, rgba(8, 13, 24, 0.98), rgba(13, 18, 32, 0.96)),
+    var(--color-background);
   position: relative;
   min-height: 400px;
   display: flex;
@@ -149,9 +152,7 @@ function normalizeSocialHref(link: { icon?: string; label?: string; href?: strin
   transform: translateX(-50%);
   width: 300px;
   height: 300px;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.15), transparent);
-  border-radius: 50%;
-  filter: blur(80px);
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.08), transparent);
   pointer-events: none;
 }
 
@@ -200,15 +201,16 @@ function normalizeSocialHref(link: { icon?: string; label?: string; href?: strin
   width: 52px;
   height: 52px;
   color: var(--color-text);
-  background: rgba(168, 85, 247, 0.1);
+  background: rgba(9, 14, 26, 0.78);
   border-radius: 50%;
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
 }
 
 .social-link:hover {
-  background: rgba(168, 85, 247, 0.2);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  background: rgba(14, 165, 233, 0.12);
+  border-color: rgba(56, 189, 248, 0.62);
+  color: #7dd3fc;
   transform: translateY(-3px);
 }
 

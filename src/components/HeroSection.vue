@@ -24,7 +24,7 @@ watch(
 <template>
   <section id="hero" class="hero">
     <div class="hero-container">
-      <div class="hero-content">
+      <div class="hero-content motion-hero-copy">
         <div class="greeting">
           <span>{{ hero?.greeting ?? 'Hello! I Am' }}</span>
           <span class="gradient-text">{{ hero?.name ?? 'Bagas Firmansyah' }}</span>
@@ -38,7 +38,7 @@ watch(
           {{ hero?.bio ?? "I'm a web development enthusiast who enjoys turning ideas into simple, usable interfaces. I'm currently expanding my skills in frontend technologies and eager to gain real industry experience." }}
         </p>
       </div>
-      <div class="ava">
+      <div class="ava motion-hero-media" data-motion-card>
         <img :src="profileImageSrc" alt="Profile" class="ava-img" @error="imageFailed = true" />
       </div>
     </div>
@@ -52,9 +52,23 @@ watch(
   align-items: center;
   justify-content: center;
   padding: 80px 2rem 2rem;
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(236, 72, 153, 0.05) 100%);
+  background:
+    linear-gradient(115deg, rgba(8, 13, 24, 0.96) 0%, rgba(19, 16, 39, 0.96) 54%, rgba(9, 22, 36, 0.94) 100%),
+    var(--color-background);
   position: relative;
   overflow: hidden;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.65), transparent 78%);
+  pointer-events: none;
 }
 
 .ava .ava-img {
@@ -85,12 +99,8 @@ watch(
 .hero::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 20% 50%, rgba(168, 85, 247, 0.1), transparent 50%),
-              radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.1), transparent 50%);
+  inset: 0;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.08), transparent 34%, rgba(236, 72, 153, 0.08));
   pointer-events: none;
 }
 
@@ -109,6 +119,7 @@ watch(
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  max-width: 680px;
 }
 
 .greeting {
@@ -125,9 +136,9 @@ watch(
 }
 
 .hero-title {
-  font-size: 3.5rem;
+  font-size: clamp(2.7rem, 6vw, 5.3rem);
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.04;
   color: var(--color-text);
   margin: 0;
 }
