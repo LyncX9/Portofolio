@@ -1,17 +1,39 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { gsap } from 'gsap'
+import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
 import logo from '@/assets/logo.png'
+
+gsap.registerPlugin(ScrollToPlugin)
 
 const router = useRouter()
 const mobileMenuOpen = ref(false)
+let activeScrollTween: ReturnType<typeof gsap.to> | null = null
 
 const scrollToSection = (sectionId: string) => {
   mobileMenuOpen.value = false
   const element = document.getElementById(sectionId)
-  if (element) {
-    element.scrollIntoView({ behavior: 'smooth' })
+  if (!element) {
+    return
   }
+
+  const navbarHeight = document.querySelector('.navbar')?.getBoundingClientRect().height ?? 0
+  const targetY = Math.max(
+    0,
+    window.scrollY + element.getBoundingClientRect().top - navbarHeight - 12
+  )
+
+  activeScrollTween?.kill()
+
+  activeScrollTween = gsap.to(window, {
+    duration: 1.15,
+    ease: 'power3.inOut',
+    scrollTo: { y: targetY, autoKill: true },
+    onComplete: () => {
+      activeScrollTween = null
+    },
+  })
 }
 
 const navigateTo = (path: string) => {

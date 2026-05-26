@@ -66,22 +66,10 @@ function isImageIcon(icon: string): boolean {
 .skills {
   padding: 7rem 2rem;
   background:
-    linear-gradient(135deg, rgba(5, 9, 17, 0.98) 0%, rgba(14, 20, 35, 0.96) 100%),
+    linear-gradient(180deg, rgba(5, 9, 17, 0.98) 0%, rgba(8, 13, 24, 0.98) 100%),
     var(--color-background);
   position: relative;
   overflow: hidden;
-}
-
-.skills::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 400px;
-  height: 400px;
-  background: conic-gradient(from 180deg, transparent, rgba(56, 189, 248, 0.09), rgba(168, 85, 247, 0.08), transparent);
-  pointer-events: none;
 }
 
 .skills-container {
